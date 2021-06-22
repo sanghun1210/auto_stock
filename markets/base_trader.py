@@ -24,7 +24,7 @@ class BaseTrader():
         total_volume = 0
         len = end - start
         for i in range(start, len):
-            total_volume = total_volume + self.candles[i].candle_acc_trade_volume
+            total_volume = total_volume + self.candles[i].trade_volume    
         return total_volume / len
 
     def is_ma_volume_up(self):
