@@ -5,3 +5,6 @@ class Candle():
         self.high_price = high_price
         self.trade_price = trade_price
         self.trade_volume = trade_volume
+
+    def is_yangbong(self):
+        return (self.trade_price - self.opening_price) > 0
