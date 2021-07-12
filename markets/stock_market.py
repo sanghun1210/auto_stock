@@ -21,7 +21,7 @@ from .minute3_trader import *
 from .minute1_trader import *
 
 class StockMarket(BaseMarket):
-    def __init__(self):
+    def __init__(self, src_logger):
         super().__init__()
         self.market_group = None
         self.week_trader = None
@@ -33,6 +33,7 @@ class StockMarket(BaseMarket):
         self.minute10_trader = None
         self.minute5_trader = None
         self.minute3_trader = None
+        self.logger = src_logger
 
     def get_ticker_all(self, ticker_filename) : 
         with open(os.path.join(os.getcwd(), ticker_filename), 'r') as f:
@@ -48,108 +49,6 @@ class StockMarket(BaseMarket):
         else : 
             ma = ((b - a) / b) * 100
         return ma
-
-    def init_traders(self, ticker_code):
-        try:
-            # self.minute1_trader = Minute1Trader(market_name, 120)
-            # time.sleep(0.1)
-            # self.minute3_trader = Minute3Trader(market_name, 120)
-            # time.sleep(0.1)
-            # self.minute5_trader = Minute5Trader(market_name, 120)
-            # time.sleep(0.1)
-            # self.minute10_trader = Minute10Trader(market_name, 120)
-            # time.sleep(0.1)
-            # self.minute15_trader = Minute15Trader(market_name, 120)
-            # time.sleep(0.1)
-            # self.minute30_trader = Minute30Trader(market_name, 120)
-            # time.sleep(0.1)
-            # self.minute60_trader = Minute60Trader(market_name, 120)
-            # time.sleep(0.1)
-            # self.minute240_trader = Minute240Trader(market_name, 120)
-            # time.sleep(0.1)
-
-            print('checking... ticker_code: ', ticker_code)
-            
-            self.day_trader = DayTrader(ticker_code, 70)
-            return True
-        except Exception as e:    
-            print("raise error ", e)
-            return False
-
-    # 저점 근처에서 거래량이 고갈되었는지 확인 (todo)
-    # 손잡이를 만든후 거래량이 증가했는지 확인
-    # 자기 자신이 가장 클경우에 대한 대비가 필요 (todo)
-    def is_pattern1_good(self, ticker_code):
-        try:
-            self.week_trader = WeekTrader(ticker_code, 40)
-            self.day_trader = DayTrader(ticker_code, 50)
-            # if self.week_trader.is_ma_growup() and self.week_trader.get_ma_margin() <= 0.5:
-            #     print('wow1')
-            #     return True
-
-            if  self.week_trader.candles[0].trade_price > self.week_trader.ma(10) : 
-                if self.get_margin(self.week_trader.get_max_trade_price(15), self.week_trader.candles[0].trade_price) <= 1.2:
-                    if self.day_trader.candles[0].trade_volume > 0 and self.day_trader.candles[0].trade_volume >= self.day_trader.candles[1].trade_volume * 1.5:
-                        print('wow2')
-                        return True
-            return False
-        except Exception as e:
-            print("raise error ", e)
-            return False
-
-    def is_pattern2_good(self, ticker_code):
-        try:
-            self.day_trader = DayTrader(ticker_code, 70)
-            if self.day_trader.candles[0].trade_price > self.day_trader.ma(20) :
-                if self.day_trader.get_max_trade_price(24) >= self.day_trader.candles[0].trade_price or self.get_margin(self.day_trader.get_max_trade_price(24), self.day_trader.candles[0].trade_price) <= 1.4:
-                    if self.day_trader.ma_volume(0, 2) > self.day_trader.ma_volume(2, 9) * 2:
-                        print('wow3')
-                        return True
-            return False
-        except Exception as e:
-            return False
-
-    def is_pattern3_volumne_good(self, trader):
-        if trader.candles[0].trade_volume > 0 and trader.candles[0].is_yangbong() == False and trader.is_volumne_min(0, 7):
-            print('min')
-            return True
-        if trader.candles[0].trade_volume > 0 and trader.candles[0].trade_volume > trader.candles[1].trade_volume * 1.5:
-            return True
-        return False
-        
-
-    def is_pattern3_good(self, ticker_code):
-        try:
-            self.week_trader = WeekTrader(ticker_code, 40)
-            self.day_trader = DayTrader(ticker_code, 50)
-            if self.week_trader.candles[0].trade_price >= self.week_trader.ma(15) :
-                if self.day_trader.candles[0].trade_price >= self.day_trader.ma(15):
-                    if self.is_pattern3_volumne_good(self.day_trader):
-                        print('wow3')
-                        return True
-            return False
-        except Exception as e:
-            print("raise error ", e)
-            return False
-
-    def is_pattern4_good(self, ticker_code):
-        try:
-            self.week_trader = WeekTrader(ticker_code, 60)
-            self.day_trader = DayTrader(ticker_code, 70)
-
-            stdev = self.week_trader.get_bollinger_bands_standard_deviation()
-            high_band = self.week_trader.ma(20) + (stdev * 2)
-            low_band = self.week_trader.ma(20) - (stdev * 2)
-
-            if self.get_margin(high_band, low_band) <= 18:
-                if self.week_trader.candles[0].trade_price >= self.week_trader.ma_volume(10) and self.week_trader.candles[0].trade_volume > 0:
-                    if self.day_trader.ma_volume(3) > self.day_trader.ma_volume(7):
-                        print('wow4')
-                        return True
-            return False
-        except Exception as e:
-            print("raise error ", e)
-            return False
 
     def is_2021_6month_pattern(self, ticker_code):
         try:
@@ -244,6 +143,82 @@ class StockMarket(BaseMarket):
         except Exception as e:
             print("raise error ", e)
             return False
+
+    def get_bollinger_bands_width(self, trader):
+        stdev = trader.get_bollinger_bands_standard_deviation()
+        high_band = trader.ma(20) + (stdev * 2)
+        low_band = trader.ma(20) - (stdev * 2)
+        return self.get_margin(high_band, low_band)
+
+    def check_week_point(self):
+        point = 0
+        mos_week = self.week_trader.get_momentum_list()
+        self.logger.info('mos[0] ==> ' + str(mos_week[0]))
+        self.logger.info('self.week_trader.rsi(0, 14) ==> ' + str(self.week_trader.rsi(0, 14)))
+        
+        if self.week_trader.ma(5) > self.week_trader.ma(10): point += 1
+        if self.week_trader.rsi(0, 14) >= 40: point += 1
+        if self.week_trader.rsi(0, 14) > self.day_trader.rsi(1, 14)  : point += 1
+
+        if mos_week[0] > 7:
+            point = point 
+        elif mos_week[0] < 8 and mos_week[0] >= -1:
+            point = point * 0.7 
+        else:
+            point = 0
+
+        return point
+
+    def check_day_point(self):
+        point = 0
+
+        mos_day = self.day_trader.get_momentum_list()
+        self.logger.info('mos[0] ==> ' + str(mos_day[0]))
+        self.logger.info('self.day_trader.rsi(0, 14) ==> ' + str(self.day_trader.rsi(0, 14)))
+
+        if self.day_trader.rsi(0, 14) >= 43: point += 1
+        if self.day_trader.rsi(0, 14) > self.day_trader.rsi(1, 14)  : point += 1
+        if self.get_bollinger_bands_width(self.day_trader) <= 18: point += 1
+        if self.day_trader.candles[0].trade_price > self.day_trader.ma(10): point += 1
+        if self.day_trader.ma(5) > self.day_trader.ma(20): point += 1
+
+        if mos_day[0] > 7:
+            point = point 
+        elif mos_day[0] < 8 and mos_day[0] >= -1:
+            point = point * 0.7 
+        else:
+            point = 0
+
+        return point
+
+    def check_point(self, ticker_code):
+        try:
+            point = 0
+            if self.day_trader.candles[1].trade_volume == 0:
+                return False
+
+            self.logger.info('========================================================================')
+            self.logger.info('ticker code : ' + str(ticker_code))
+
+            point_week = point + self.check_week_point()
+            self.logger.info('point_week ==> ' + str(point_week))
+
+            point_day = point + self.check_day_point()
+            self.logger.info('point_day ==> ' + str(point_day))
+
+            point = (point_week * 1.2) + point_day
+            self.logger.info('total_point ==> ' + str(point))
+
+            print('total_point ==> ' + str(point))
+
+            if point >= 7:
+                return True
+            return False
+                
+        except Exception as e:
+            print("raise error ", e)
+            return False
+
 
     # def is_pattern5_good(self, ticker_code):
     #     try:

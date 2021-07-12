@@ -3,6 +3,7 @@ import time
  
 from mail import *
 from markets.stock_market import *
+import logging
 
 ticker_filename = 'ticker_code.txt'
 except_list = ['052190', '033790', '053450', '044490', '003280' ]
@@ -10,7 +11,15 @@ except_list = ['052190', '033790', '053450', '044490', '003280' ]
 def main():
     to_send_mail_list = []
     try:
-        stock_market = StockMarket()
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler = logging.FileHandler('upbit_info.log')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        stock_market = StockMarket(logger)
         tickers = stock_market.get_ticker_all(ticker_filename)
         for ticker_code in tickers:
             if ticker_code in except_list:
@@ -22,7 +31,7 @@ def main():
             #     print('2021 6month good1')
             #     to_send_mail_list.append(ticker_code + ' wow1')
 
-            if stock_market.is_2021_6month_pattern3(ticker_code):
+            if stock_market.check_point(ticker_code):
                 print('2021 6month good2')
                 to_send_mail_list.append(ticker_code + ' wow2')
                 
