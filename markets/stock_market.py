@@ -150,20 +150,34 @@ class StockMarket(BaseMarket):
         low_band = trader.ma(20) - (stdev * 2)
         return self.get_margin(high_band, low_band)
 
+    def get_rsi_check_point(self, trader):
+        point = 0
+        
+
+
     def check_week_point(self):
         point = 0
         mos_week = self.week_trader.get_momentum_list()
         self.logger.info('mos[0] ==> ' + str(mos_week[0]))
         self.logger.info('self.week_trader.rsi(0, 14) ==> ' + str(self.week_trader.rsi(0, 14)))
+        self.logger.info('self.get_bollinger_bands_width(self.week_trader) ==> ' + str(self.get_bollinger_bands_width(self.week_trader)))
+        self.logger.info('self.get_margin(self.week_trader.ma(5), self.week_trader.ma(10)) ==> ' + str(self.get_margin(self.week_trader.ma(5), self.week_trader.ma(10))))
+        self.logger.info('self.week_trader.ma(5), self.week_trader.ma(10) ==> ' + str(self.week_trader.ma(5)) + ' ' + str(self.week_trader.ma(10)))
+        self.logger.info('self.week_trader.ma_volume(3), self.week_trader.ma_volume(10) ==> ' + str(self.week_trader.ma_volume(5))  +  ' ' +str(self.week_trader.ma_volume(10))) 
         
-        if self.week_trader.ma(5) > self.week_trader.ma(10): point += 1
-        if self.week_trader.rsi(0, 14) >= 40: point += 1
-        if self.week_trader.rsi(0, 14) > self.day_trader.rsi(1, 14)  : point += 1
+        if self.week_trader.ma(5) > self.week_trader.ma(10) or self.get_margin(self.week_trader.ma(5), self.week_trader.ma(10)) < 0.4: point += 1
+        if self.week_trader.candles[0].trade_price > self.week_trader.ma(10): point += 1
+        if self.get_bollinger_bands_width(self.week_trader) <= 26: point += 1.5
+        if self.week_trader.ma_volume(3) >= self.week_trader.ma_volume(10) * 1.5 : point += 1
 
-        if mos_week[0] > 7:
+        if self.week_trader.rsi(0, 14) >= 55: point += 1.2
+        elif self.week_trader.rsi(0, 14) >= 38: point += 1
+        else : point = point - 1
+
+        if mos_week[0] >= 9:
             point = point 
-        elif mos_week[0] < 8 and mos_week[0] >= -1:
-            point = point * 0.7 
+        elif mos_week[0] >= -2:
+            point = point * 0.8
         else:
             point = 0
 
@@ -175,17 +189,29 @@ class StockMarket(BaseMarket):
         mos_day = self.day_trader.get_momentum_list()
         self.logger.info('mos[0] ==> ' + str(mos_day[0]))
         self.logger.info('self.day_trader.rsi(0, 14) ==> ' + str(self.day_trader.rsi(0, 14)))
+        self.logger.info('self.get_bollinger_bands_width(self.day_trader) ==> ' + str(self.get_bollinger_bands_width(self.day_trader)))
+        self.logger.info('self.day_trader.ma(10) self.day_trader.ma(20) self.day_trader.ma(60) ==> ' + str(self.day_trader.ma(10)) + ' ' + str(self.day_trader.ma(20)) + ' ' + str(self.day_trader.ma(20)))
+        self.logger.info('self.day_trader.ma_volume(3), self.day_trader.ma_volume(10) ==> ' + str(self.day_trader.ma_volume(5))  +  ' ' +str(self.day_trader.ma_volume(10))) 
 
-        if self.day_trader.rsi(0, 14) >= 43: point += 1
-        if self.day_trader.rsi(0, 14) > self.day_trader.rsi(1, 14)  : point += 1
-        if self.get_bollinger_bands_width(self.day_trader) <= 18: point += 1
+        if self.get_bollinger_bands_width(self.day_trader) <= 14: point += 1.5
+        if self.day_trader.ma(5) > self.day_trader.ma(20):
+            point = point + 1
+        elif self.get_margin(self.day_trader.ma(5), self.day_trader.ma(10)) < 0.3 and self.day_trader.rsi(0, 14) >= 60:
+            point = point + 1
+            
         if self.day_trader.candles[0].trade_price > self.day_trader.ma(10): point += 1
-        if self.day_trader.ma(5) > self.day_trader.ma(20): point += 1
+        if self.day_trader.ma_volume(3) >= self.day_trader.ma_volume(10) * 1.7 : point += 1
+        
+        if self.day_trader.rsi(0, 14) >= 55: point += 1.2
+        elif self.day_trader.rsi(0, 14) >= 38: point += 1
+        else: point = point - 1
+        
+        if self.day_trader.rsi(0, 14) > self.day_trader.rsi(1, 14)  : point += 1
 
-        if mos_day[0] > 7:
+        if mos_day[0] >= 9:
             point = point 
-        elif mos_day[0] < 8 and mos_day[0] >= -1:
-            point = point * 0.7 
+        elif mos_day[0] >= -1.5:
+            point = point * 0.8
         else:
             point = 0
 
@@ -206,14 +232,11 @@ class StockMarket(BaseMarket):
             point_day = point + self.check_day_point()
             self.logger.info('point_day ==> ' + str(point_day))
 
-            point = (point_week * 1.2) + point_day
+            point = point_week + (point_day * 1.2)
             self.logger.info('total_point ==> ' + str(point))
 
             print('total_point ==> ' + str(point))
-
-            if point >= 7:
-                return True
-            return False
+            return point
                 
         except Exception as e:
             print("raise error ", e)
