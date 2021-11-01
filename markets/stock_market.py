@@ -19,6 +19,7 @@ from .minute10_trader import *
 from .minute5_trader import *
 from .minute3_trader import *
 from .minute1_trader import *
+from . import algorithms
 
 class StockMarket(BaseMarket):
     def __init__(self, src_logger):
@@ -50,208 +51,82 @@ class StockMarket(BaseMarket):
             ma = ((b - a) / b) * 100
         return ma
 
-    def is_2021_6month_pattern(self, ticker_code):
-        try:
-            self.week_trader = WeekTrader(ticker_code, 60)
-            self.day_trader = DayTrader(ticker_code, 70)
-
-            stdev = self.day_trader.get_bollinger_bands_standard_deviation()
-            high_band = self.day_trader.ma(20) + (stdev * 2)
-            low_band = self.day_trader.ma(20) - (stdev * 2)
-
-            if self.get_margin(high_band, low_band) <= 16:
-                if self.day_trader.candles[0].trade_volume > 0 and self.week_trader.candles[0].trade_price > self.week_trader.ma(10):
-                    if self.day_trader.candles[0].trade_price > self.day_trader.ma(20) :
-                        if self.day_trader.candles[0].trade_volume > self.day_trader.candles[1].trade_volume:
-                            print('2020_6month good')
-                            return True
-            return False
-        except Exception as e:
-            print("raise error ", e)
-            return False
-
     def init_trader(self, ticker_code):        
         try:
             self.week_trader = WeekTrader(ticker_code, 30)
-            self.day_trader = DayTrader(ticker_code, 70)
+            self.day_trader = DayTrader(ticker_code, 50)
         except Exception as e:
             print("day_trader init fail: ", e)
 
-    def is_2021_6month_pattern1(self, ticker_code):
+    def is_nice_main_trader(self, trader, max_bol_width):
+        if trader.candles[0].trade_price >= trader.ma(10) and \
+            trader.get_current_rsi() >= 50 and algorithms.macd_line_over_than_signal(trader.get_dataframe()):
+            self.logger.info('week_trader.rsi(0, 14)' + str(trader.get_current_rsi()))
+            return True
+
+    # def is_nice_trader(self, trader, max_bol_width):
+    #     current_rsi = trader.get_current_rsi()
+    #     mos = trader.get_momentum_list()
+
+    #     self.logger.info('get_bollinger_bands_width(14) ==> ' + str(trader.get_bollinger_bands_width(14)))
+    #     self.logger.info('current rsi ==> ' + str(current_rsi))
+    #     self.logger.info('mos[0], trader.momentum_ma(4) : ' + str(mos[0]) + ', ' + str(trader.momentum_ma(4)))
+    #     self.logger.info('ma_volume(5), ma_volume(20) : ' + str(trader.ma_volume(5)) + ', ' + str(trader.ma_volume(20)))
+        
+    #     if algorithms.macd_line_over_than_signal2(trader.get_dataframe(), 6, 19, 6) and \
+    #         algorithms.bbands_width(trader.get_dataframe(), 10) < max_bol_width:
+    #             return True
+
+    def is_nice_week(self, trader):
+        current_rsi = trader.get_current_rsi()
+        mos = trader.get_momentum_list()
+
+        self.logger.info('get_bollinger_bands_width(14) ==> ' + str(trader.get_bollinger_bands_width(14)))
+        self.logger.info('current rsi ==> ' + str(current_rsi))
+        self.logger.info('mos[0], trader.momentum_ma(4) : ' + str(mos[0]) + ', ' + str(trader.momentum_ma(4)))
+        self.logger.info('ma_volume(5), ma_volume(20) : ' + str(trader.ma_volume(5)) + ', ' + str(trader.ma_volume(20)))
+        
+        # if algorithms.macd_line_over_than_signal(trader.get_dataframe(), 12, 26, 9):
+        #     return True
+
+        slow_k, slow_d = algorithms.stc_slow(trader.get_dataframe())
+
+        if algorithms.macd_line_over_than_signal(trader.get_dataframe(), 12, 26, 9) and \
+            algorithms.is_stc_slow_good(trader.get_dataframe()) < 50 and \
+            trader.get_dataframe()['trade_price'].iloc[-1] > algorithms.get_current_sma(trader.get_dataframe(), 10) and \
+            algorithms.bbands_width(trader.get_dataframe(), 10) < 20:
+            return True
+        return False
+
+    # def is_nice_day(self, trader, max_bol_width):
+    #     slow_k, slow_d = algorithms.stc_slow(trader.get_dataframe())
+    #     if algorithms.is_stc_slow_good(trader.get_dataframe()) < 40 :
+    #        return True
+
+    def check_week(self, ticker_code):
         try:
-            if self.day_trader.candles[0].trade_volume == 0:
+            self.week_trader = WeekTrader(ticker_code, 40)
+            if self.week_trader.candles[1].trade_volume == 0:
                 return False
 
-            if self.week_trader.ma(5) < self.week_trader.ma(10):
-                return False
-
-            stdev = self.day_trader.get_bollinger_bands_standard_deviation()
-            high_band = self.day_trader.ma(20) + (stdev * 2)
-            low_band = self.day_trader.ma(20) - (stdev * 2)
-            if self.day_trader.ma(20) > self.day_trader.ma(60) or (self.day_trader.ma(60) > self.day_trader.ma(20) and self.get_margin(self.day_trader.ma(60), self.day_trader.ma(20) > 7)):
-                if self.get_margin(high_band, low_band) <= 13:
-                    if self.day_trader.ma(5) > self.day_trader.ma(60) and self.get_margin(self.day_trader.ma(5), self.day_trader.ma(20)) <= 0.8:
-                        return True
-            return False
-            
+            if self.is_nice_week(self.week_trader):
+                print('wow_week')
+                is_nice_week = True
+                return True
         except Exception as e:
             print("raise error ", e)
             return False
 
-    def is_2021_6month_pattern2(self, ticker_code):
+    def check_day(self, ticker_code):
         try:
-            if self.day_trader.candles[0].trade_volume == 0:
-                return False
-
-            if self.week_trader.ma(5) < self.week_trader.ma(10):
-                return False
-
-            stdev = self.day_trader.get_bollinger_bands_standard_deviation()
-            high_band = self.day_trader.ma(20) + (stdev * 2)
-            low_band = self.day_trader.ma(20) - (stdev * 2)
-            if self.get_margin(high_band, low_band) <= 13:
-                if self.get_margin(self.day_trader.ma(20), self.day_trader.ma(60)) <= 0.5 and self.day_trader.candles[0].trade_price >= self.day_trader.ma(20):
-                    if self.day_trader.candles[0].trade_price >= self.day_trader.ma(5):
-                        return True
-            return False
-            
-        except Exception as e:
-            print("raise error ", e)
-            return False
-
-    def is_2021_6month_pattern3(self, ticker_code):
-        try:            
+            self.day_trader = DayTrader(ticker_code, 80)
             if self.day_trader.candles[1].trade_volume == 0:
                 return False
 
-            if self.week_trader.ma(5) < self.week_trader.ma(10):
-                return False
-
-            if self.day_trader.rsi(0, 14) < 50:
-                return False
-
-            mos = self.day_trader.get_momentum_list()
-            if mos[0] >= 0 and mos[0] > self.day_trader.momentum_ma(5) and mos[0] <= 7:
-                stdev = self.day_trader.get_bollinger_bands_standard_deviation()
-                high_band = self.day_trader.ma(20) + (stdev * 2)
-                low_band = self.day_trader.ma(20) - (stdev * 2)
-                if self.get_margin(high_band, low_band) <= 15:
-                    if self.day_trader.ma(5) >= self.day_trader.ma(10) and self.get_margin(self.day_trader.ma(5), self.day_trader.ma(10)) <= 0.7 and self.day_trader.ma(5) >= self.day_trader.ma(60):
-                        return True
+            if self.is_nice_day(self.day_trader, 30):
+                print('wow_day!!!')
+                return True
             return False
-                
         except Exception as e:
             print("raise error ", e)
             return False
-
-    def get_bollinger_bands_width(self, trader):
-        stdev = trader.get_bollinger_bands_standard_deviation()
-        high_band = trader.ma(20) + (stdev * 2)
-        low_band = trader.ma(20) - (stdev * 2)
-        return self.get_margin(high_band, low_band)
-
-    def get_rsi_check_point(self, trader):
-        point = 0
-        
-
-
-    def check_week_point(self):
-        point = 0
-        mos_week = self.week_trader.get_momentum_list()
-        self.logger.info('mos[0] ==> ' + str(mos_week[0]))
-        self.logger.info('self.week_trader.rsi(0, 14) ==> ' + str(self.week_trader.rsi(0, 14)))
-        self.logger.info('self.get_bollinger_bands_width(self.week_trader) ==> ' + str(self.get_bollinger_bands_width(self.week_trader)))
-        self.logger.info('self.get_margin(self.week_trader.ma(5), self.week_trader.ma(10)) ==> ' + str(self.get_margin(self.week_trader.ma(5), self.week_trader.ma(10))))
-        self.logger.info('self.week_trader.ma(5), self.week_trader.ma(10) ==> ' + str(self.week_trader.ma(5)) + ' ' + str(self.week_trader.ma(10)))
-        self.logger.info('self.week_trader.ma_volume(3), self.week_trader.ma_volume(10) ==> ' + str(self.week_trader.ma_volume(5))  +  ' ' +str(self.week_trader.ma_volume(10))) 
-        
-        if self.week_trader.ma(5) > self.week_trader.ma(10) or self.get_margin(self.week_trader.ma(5), self.week_trader.ma(10)) < 0.4: point += 1
-        if self.week_trader.candles[0].trade_price > self.week_trader.ma(10): point += 1
-        if self.get_bollinger_bands_width(self.week_trader) <= 26: point += 1.5
-        if self.week_trader.ma_volume(3) >= self.week_trader.ma_volume(10) * 1.5 : point += 1
-
-        if self.week_trader.rsi(0, 14) >= 55: point += 1.2
-        elif self.week_trader.rsi(0, 14) >= 38: point += 1
-        else : point = point - 1
-
-        if mos_week[0] >= 9:
-            point = point 
-        elif mos_week[0] >= -2:
-            point = point * 0.8
-        else:
-            point = 0
-
-        return point
-
-    def check_day_point(self):
-        point = 0
-
-        mos_day = self.day_trader.get_momentum_list()
-        self.logger.info('mos[0] ==> ' + str(mos_day[0]))
-        self.logger.info('self.day_trader.rsi(0, 14) ==> ' + str(self.day_trader.rsi(0, 14)))
-        self.logger.info('self.get_bollinger_bands_width(self.day_trader) ==> ' + str(self.get_bollinger_bands_width(self.day_trader)))
-        self.logger.info('self.day_trader.ma(10) self.day_trader.ma(20) self.day_trader.ma(60) ==> ' + str(self.day_trader.ma(10)) + ' ' + str(self.day_trader.ma(20)) + ' ' + str(self.day_trader.ma(20)))
-        self.logger.info('self.day_trader.ma_volume(3), self.day_trader.ma_volume(10) ==> ' + str(self.day_trader.ma_volume(5))  +  ' ' +str(self.day_trader.ma_volume(10))) 
-
-        if self.get_bollinger_bands_width(self.day_trader) <= 14: point += 1.5
-        if self.day_trader.ma(5) > self.day_trader.ma(20):
-            point = point + 1
-        elif self.get_margin(self.day_trader.ma(5), self.day_trader.ma(10)) < 0.3 and self.day_trader.rsi(0, 14) >= 60:
-            point = point + 1
-            
-        if self.day_trader.candles[0].trade_price > self.day_trader.ma(10): point += 1
-        if self.day_trader.ma_volume(3) >= self.day_trader.ma_volume(10) * 1.7 : point += 1
-        
-        if self.day_trader.rsi(0, 14) >= 55: point += 1.2
-        elif self.day_trader.rsi(0, 14) >= 38: point += 1
-        else: point = point - 1
-        
-        if self.day_trader.rsi(0, 14) > self.day_trader.rsi(1, 14)  : point += 1
-
-        if mos_day[0] >= 9:
-            point = point 
-        elif mos_day[0] >= -1.5:
-            point = point * 0.8
-        else:
-            point = 0
-
-        return point
-
-    def check_point(self, ticker_code):
-        try:
-            point = 0
-            if self.day_trader.candles[1].trade_volume == 0:
-                return False
-
-            self.logger.info('========================================================================')
-            self.logger.info('ticker code : ' + str(ticker_code))
-
-            point_week = point + self.check_week_point()
-            self.logger.info('point_week ==> ' + str(point_week))
-
-            point_day = point + self.check_day_point()
-            self.logger.info('point_day ==> ' + str(point_day))
-
-            point = point_week + (point_day * 1.2)
-            self.logger.info('total_point ==> ' + str(point))
-
-            print('total_point ==> ' + str(point))
-            return point
-                
-        except Exception as e:
-            print("raise error ", e)
-            return False
-
-
-    # def is_pattern5_good(self, ticker_code):
-    #     try:
-    #         day_trader = DayTrader(ticker_code, 70)
-                
-    #         if day_trader.candles[0].trade_volume > 0:
-    #             if day_trader.ma(5) >= day_trader.ma(60) or self.get_margin(day_trader.ma(15), day_trader.ma(50)) <= 1.2):
-    #                 print('wow5')
-    #                 return True
-    #         return False
-    #     except Exception as e:
-    #         print("raise error ", e)
-    #         return False

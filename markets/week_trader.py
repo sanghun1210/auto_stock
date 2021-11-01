@@ -32,7 +32,7 @@ def init_candle_list(ticker, count) :
             low_price = temp[3]
             trade_price = temp[4]
             trade_volume = temp[5]
-            candle = Candle(datatime, int(opening_price.replace(',', '')), int(high_price.replace(',', '')), int(trade_price.replace(',', '')), int(trade_volume.replace(',', '')))
+            candle = Candle(datatime, int(opening_price.replace(',', '')), int(high_price.replace(',', '')), int(trade_price.replace(',', '')), int(low_price.replace(',', '')),  int(trade_volume.replace(',', '')))
             candles.append(candle)
         candles.reverse()
     return candles
@@ -43,9 +43,10 @@ class WeekTrader(BaseTrader):
         self.candles = init_candle_list(market_name, count)
         self.trader_name = 'WeekTrader'
 
-    def is_ma_growup2(self):
-        return self.ma(15) > self.ma(50) 
-
     
+
+
+        
+
 
 

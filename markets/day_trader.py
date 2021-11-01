@@ -39,7 +39,7 @@ def init_candle_list(ticker, count) :
                     high_price = srlists[i].find_all("td", class_="num")[3].text  #고가
                     low_price = srlists[i].find_all("td", class_="num")[4].text  #저가
                     trade_volume = srlists[i].find_all("td", class_="num")[5].text  #거래량
-                    candle = Candle(datatime, int(opening_price.replace(',', '')), int(high_price.replace(',', '')), int(trade_price.replace(',', '')), int(trade_volume.replace(',', '')))
+                    candle = Candle(datatime, int(opening_price.replace(',', '')), int(high_price.replace(',', '')), int(trade_price.replace(',', '')), int(low_price.replace(',', '')), int(trade_volume.replace(',', '')))
                     candles.append(candle)
 
             if (len(candles) >= count):

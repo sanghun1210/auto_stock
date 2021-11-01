@@ -12,14 +12,42 @@ from .calcualtor import *
 from enum import Enum
 
 import math
+import pandas as pd
 
 class BaseTrader():
     def __init__(self, market_name):
         self.market_name = market_name
         self.candles = []
 
+    def get_dataframe(self):
+        price_list = []
+        high_price_list = []
+        low_price_list = []
+        rsi_list = []
+        trade_volume_list = []
+
+        for candle_unit in self.candles:
+            price_list.append(candle_unit.trade_price)
+            high_price_list.append(candle_unit.high_price)
+            low_price_list.append(candle_unit.low_price)
+            trade_volume_list.append(candle_unit.trade_volume)
+
+        price_list.reverse()
+        high_price_list.reverse()
+        low_price_list.reverse()
+        trade_volume_list.reverse()
+        df = pd.DataFrame(price_list, columns=['trade_price'])
+        df.insert(1, 'high_price', high_price_list, True)
+        df.insert(2, 'low_price', low_price_list, True)
+        df.insert(3, 'trade_volume', trade_volume_list, True)
+        return df
+
     def ma(self, index):
         my_cal = Calculator(self.candles)
+        return my_cal.ma(index)
+
+    def ma_from(self, start, index):
+        my_cal = Calculator(self.candles[start:])
         return my_cal.ma(index)
 
     def ma_volume(self, index):
@@ -90,27 +118,12 @@ class BaseTrader():
 
     def get_ma(self, count):
         return self.ma(count)
-
-    def is_ma50_over_than_ma15(self):
-        return self.ma(50) > self.ma(15)
-
-    def is_ma120_over_than_ma15(self):
-        return self.ma(120) > self.ma(15)
-
-    def is_golden_cross(self, cross_margin):
-        return self.is_ma50_over_than_ma15() and self.get_ma_margin() <= cross_margin
         
     def get_ma_margin(self):
         if self.ma(50) > self.ma(15):
             return round(float(((self.ma(50) - self.ma(15)) / self.ma(50)) * 100), 2)
         else:
             return round(float(((self.ma(15) - self.ma(50)) / self.ma(15)) * 100), 2)
-
-    def get_ma_margin120(self):
-        if self.ma(120) > self.ma(15):
-            return round(float(((self.ma(120) - self.ma(15)) / self.ma(120)) * 100), 2)
-        else:
-            return round(float(((self.ma(15) - self.ma(120)) / self.ma(15)) * 100), 2)
 
     def get_ma_print(self):
         if self.ma(50) > self.ma(15):
@@ -126,12 +139,12 @@ class BaseTrader():
         else :
             return b - a
 
-    def get_bollinger_bands_standard_deviation(self):
-        average20 = self.ma(20)
+    def get_bollinger_bands_standard_deviation(self, bol_range):
+        bol_average = self.ma(bol_range)
         mysum = 0
-        for i in range(0, 20):
-            mysum += (self.deviation(average20, self.candles[i].trade_price) ** 2)
-        avr_dev = mysum / 20
+        for i in range(0, bol_range):
+            mysum += (self.deviation(bol_average, self.candles[i].trade_price) ** 2)
+        avr_dev = mysum / bol_range
         return math.sqrt(float(avr_dev))
 
 
@@ -154,26 +167,58 @@ class BaseTrader():
             sum = sum + mos[i]
         return sum / index
 
-    def rsi(self, index, rsi_range):
-        diff_list = []
-        for i in range(index, rsi_range + index):
-            diff_list.append((self.candles[i].trade_price - self.candles[i + 1].trade_price))
+    def get_current_rsi(self):
+        price_list = []
+        rsi_list = []
+
+        for candle_unit in self.candles:
+            price_list.append(candle_unit.trade_price)
         
-        #구한 데이터를 기준으로 음의 값을 0으로하는 상승분 데이터와, 양의 값을 0으로 하는 하락분데이터로 나눔
-        upper_sum = 0
-        down_sum = 0
-        for diff_data in diff_list:
-            if diff_data > 0:
-                upper_sum += diff_data
-            else:
-                down_sum += abs(diff_data)
+        price_list.reverse()  #order : past -> now
+        rsi_list.append(self.rsi_calculate(price_list, 14, int(len(self.candles))))
+        return rsi_list[0]
 
-        AU = upper_sum / rsi_range
-        AD = down_sum / rsi_range
 
-        RS = AU / AD
-        RSI = AU/(AU+AD)
-        return RSI * 100
+    #RSI계산 함수
+    def rsi_calculate(self, l, n, sample_number): #l = price_list, n = rsi_number
+        
+        diff=[]
+        au=[]
+        ad=[]
+
+        if len(l) != sample_number: #url call error
+            return -1 
+        for i in range(len(l)-1):
+            diff.append(l[i+1]-l[i]) #price difference
+        
+        au = pd.Series(diff) #list to series
+        ad = pd.Series(diff)
+
+        au[au<0] = 0 #remove ad
+        ad[ad>0] = 0 #remove au
+
+        _gain = au.ewm(com = n, min_periods = sample_number -1).mean() #Exponentially weighted average
+        _loss = ad.abs().ewm(com = n, min_periods = sample_number -1).mean()
+        RS = _gain/_loss
+
+        rsi = 100-(100 / (1+RS.iloc[-1]))
+
+        return rsi
+
+    def get_margin(self, a, b):
+        ma = 0
+        if a > b:
+            ma = ((a - b) / a) * 100
+        else : 
+            ma = ((b - a) / b) * 100
+        return ma
+
+    def get_bollinger_bands_width(self, bol_range):
+        stdev = self.get_bollinger_bands_standard_deviation(bol_range)
+        high_band = self.ma(bol_range) + (stdev * 2)
+        low_band = self.ma(bol_range) - (stdev * 2)
+        return self.get_margin(high_band, low_band)
+
 
 
 
