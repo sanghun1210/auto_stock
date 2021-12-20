@@ -4,9 +4,9 @@ from pandas_datareader import data
 
 import statistics as stats
 
-def rsi(pd_dataframe):
+def rsi(pd_dataframe ,period):
     close = pd_dataframe['trade_price']
-    time_period = 20 # look back period to compute gains & losses
+    time_period = period # look back period to compute gains & losses
     gain_history = [] # history of gains over look back period (0 if no gain, magnitude of gain if gain)
     loss_history = [] # history of losses over look back period (0 if no loss, magnitude of loss if loss)
     avg_gain_values = [] # track avg gains for visualization purposes
@@ -48,24 +48,25 @@ def rsi(pd_dataframe):
     rs_gain = pd_dataframe['RelativeStrengthAvgGainOver20Days']
     rs_loss = pd_dataframe['RelativeStrengthAvgLossOver20Days']
     rsi = pd_dataframe['RelativeStrengthIndicatorOver20Days']
+    return rsi
 
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
 
-    fig = plt.figure()
-    ax1 = fig.add_subplot(311, ylabel='Google price in $')
-    close_price.plot(ax=ax1, color='black', lw=2., legend=True)
-    ax2 = fig.add_subplot(312, ylabel='RS')
-    rs_gain.plot(ax=ax2, color='g', lw=2., legend=True)
-    rs_loss.plot(ax=ax2, color='r', lw=2., legend=True)
-    ax3 = fig.add_subplot(313, ylabel='RSI')
-    rsi.plot(ax=ax3, color='b', lw=2., legend=True)
-    plt.show()
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(311, ylabel='Google price in $')
+    # close_price.plot(ax=ax1, color='black', lw=2., legend=True)
+    # ax2 = fig.add_subplot(312, ylabel='RS')
+    # rs_gain.plot(ax=ax2, color='g', lw=2., legend=True)
+    # rs_loss.plot(ax=ax2, color='r', lw=2., legend=True)
+    # ax3 = fig.add_subplot(313, ylabel='RSI')
+    # rsi.plot(ax=ax3, color='b', lw=2., legend=True)
+    # plt.show()
 
-def get_current_rsi(pd_dataframe):
+def get_current_rsi(pd_dataframe, period):
         price_list = []
         rsi_list = []
         price_list = pd_dataframe['trade_price']        
-        rsi_list.append(rsi_calculate(price_list, 14, int(len(price_list))))
+        rsi_list.append(rsi_calculate(price_list, period, int(len(price_list))))
         return rsi_list[0]
 
 #RSI계산 함수

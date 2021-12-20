@@ -6,7 +6,7 @@ def send_mail(msg, subject):
     smtp = smtplib.SMTP('smtp.gmail.com', 587)
     smtp.ehlo()
     smtp.starttls()
-    smtp.login(me, 'dlthfk208.')
+    smtp.login(me, 'emkyudballjbrzdb')
  
     msg = MIMEText(msg)
     msg['Subject'] = subject

@@ -48,3 +48,25 @@ def obv_is_good(pd_dataframe):
     # plt.show()
 
     return pd_dataframe['obv'].iloc[-1] > pd_dataframe['obv_ema'].iloc[-1]
+
+def get_obv(pd_dataframe, period):
+    # obv가 저장될 pandas series를 생성
+    pd_dataframe['obv'] = pd.Series(index=pd_dataframe['trade_price'].index)
+    pd_dataframe['obv'].iloc[0] = pd_dataframe['trade_volume'].iloc[0]
+    
+    # OBV 산출공식을 구현
+    # pd.Series 구조를 연산에 직접 사용
+    for i in range(1,len(pd_dataframe)):
+        if pd_dataframe['trade_price'].iloc[i] > pd_dataframe['trade_price'].iloc[i-1] : 
+            pd_dataframe['obv'].iloc[i] = pd_dataframe['obv'].iloc[i-1] + pd_dataframe['trade_volume'].iloc[i]
+            
+        elif pd_dataframe['trade_price'].iloc[i] < pd_dataframe['trade_price'].iloc[i-1] :
+            pd_dataframe['obv'].iloc[i] = pd_dataframe['obv'].iloc[i-1] - pd_dataframe['trade_volume'].iloc[i]
+            
+        else:
+            pd_dataframe['obv'].iloc[i] = pd_dataframe['obv'].iloc[i-1]
+
+    pd_dataframe['obv_ema'] = pd_dataframe['obv'].ewm(com=period).mean()
+    return pd_dataframe['obv'], pd_dataframe['obv_ema']
+
+    #return pd_dataframe['obv'].iloc[-1] > pd_dataframe['obv_ema'].iloc[-1]

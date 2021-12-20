@@ -12,13 +12,6 @@ from .base_market import *
 from .week_trader import *
 from .day_trader import *
 from .minute240_trader import *
-from .minute60_trader import *
-from .minute30_trader import *
-from .minute15_trader import *
-from .minute10_trader import *
-from .minute5_trader import *
-from .minute3_trader import *
-from .minute1_trader import *
 from . import algorithms
 
 class StockMarket(BaseMarket):
@@ -58,50 +51,105 @@ class StockMarket(BaseMarket):
         except Exception as e:
             print("day_trader init fail: ", e)
 
-    def is_nice_main_trader(self, trader, max_bol_width):
-        if trader.candles[0].trade_price >= trader.ma(10) and \
-            trader.get_current_rsi() >= 50 and algorithms.macd_line_over_than_signal(trader.get_dataframe()):
-            self.logger.info('week_trader.rsi(0, 14)' + str(trader.get_current_rsi()))
-            return True
-
-    # def is_nice_trader(self, trader, max_bol_width):
-    #     current_rsi = trader.get_current_rsi()
-    #     mos = trader.get_momentum_list()
-
-    #     self.logger.info('get_bollinger_bands_width(14) ==> ' + str(trader.get_bollinger_bands_width(14)))
-    #     self.logger.info('current rsi ==> ' + str(current_rsi))
-    #     self.logger.info('mos[0], trader.momentum_ma(4) : ' + str(mos[0]) + ', ' + str(trader.momentum_ma(4)))
-    #     self.logger.info('ma_volume(5), ma_volume(20) : ' + str(trader.ma_volume(5)) + ', ' + str(trader.ma_volume(20)))
-        
-    #     if algorithms.macd_line_over_than_signal2(trader.get_dataframe(), 6, 19, 6) and \
-    #         algorithms.bbands_width(trader.get_dataframe(), 10) < max_bol_width:
-    #             return True
-
     def is_nice_week(self, trader):
-        current_rsi = trader.get_current_rsi()
-        mos = trader.get_momentum_list()
+        current_rsi = algorithms.get_current_rsi(trader.get_dataframe(), 14)
 
         self.logger.info('get_bollinger_bands_width(14) ==> ' + str(trader.get_bollinger_bands_width(14)))
         self.logger.info('current rsi ==> ' + str(current_rsi))
-        self.logger.info('mos[0], trader.momentum_ma(4) : ' + str(mos[0]) + ', ' + str(trader.momentum_ma(4)))
         self.logger.info('ma_volume(5), ma_volume(20) : ' + str(trader.ma_volume(5)) + ', ' + str(trader.ma_volume(20)))
-        
-        # if algorithms.macd_line_over_than_signal(trader.get_dataframe(), 12, 26, 9):
-        #     return True
 
-        slow_k, slow_d = algorithms.stc_slow(trader.get_dataframe())
+        sma10 = algorithms.sma(trader.get_dataframe(), 10)
+        sma20 = algorithms.sma(trader.get_dataframe(), 20)
+        rsi14 = algorithms.rsi(trader.get_dataframe(), 14)
 
-        if algorithms.macd_line_over_than_signal(trader.get_dataframe(), 12, 26, 9) and \
-            algorithms.is_stc_slow_good(trader.get_dataframe()) < 50 and \
-            trader.get_dataframe()['trade_price'].iloc[-1] > algorithms.get_current_sma(trader.get_dataframe(), 10) and \
-            algorithms.bbands_width(trader.get_dataframe(), 10) < 20:
+        if algorithms.is_stc_slow_good(trader.get_dataframe(), 9, 3, 3) < 58:
             return True
         return False
 
-    # def is_nice_day(self, trader, max_bol_width):
-    #     slow_k, slow_d = algorithms.stc_slow(trader.get_dataframe())
-    #     if algorithms.is_stc_slow_good(trader.get_dataframe()) < 40 :
-    #        return True
+    def get_check_week_point(self, trader):
+        point = 0
+        current_pdf = trader.get_dataframe()
+
+        sma5 = algorithms.sma(current_pdf, 5)
+        sma20 = algorithms.sma(current_pdf, 20)
+        sma10 = algorithms.sma(current_pdf, 10)
+        sma40 = algorithms.sma(current_pdf, 40)
+        # 단기 골든 크로스 MA(5,20)
+        if sma5.iloc[-1] > sma20.iloc[-1]:
+            print('단기 골든 크로스 MA(5,20)')
+            point += 1
+        
+        # 중기 골든 크로스 MA(10,40)
+        if sma10.iloc[-1] > sma40.iloc[-1]:
+            print('중기 골든 크로스 MA(10,40)')
+            point += 1
+
+        # 당일 거래 급증 종목(10일 평균 거래대비)
+        obv, obv_ema = algorithms.get_obv(current_pdf, 10)
+        if obv.iloc[-1] > obv_ema.iloc[-1]:
+            print('당일 거래 급증 종목')
+            point += 1
+        
+        # Stochastic slow(10,5,5) %K, %D 상향돌파
+        if algorithms.is_stc_slow_good(trader.get_dataframe(), 9, 3, 3) < 56:
+            print('Stochastic slow(9,3,3) %K, %D 상향돌파')
+            point += 1
+        
+        # MACD Osc(12,26,9) 0선 상향돌파
+        if algorithms.macd_line_over_than_signal(trader.get_dataframe(), 6, 19, 8):
+            print('MACD')
+            point += 1
+        
+        # RSI(14,9) Signal선 상향돌파
+        rsi9 = algorithms.rsi(current_pdf, 9)
+        rsi14 = algorithms.rsi(current_pdf, 14)
+        if rsi9.iloc[-1] > rsi14.iloc[-1]:
+            print('rsi')
+            point += 1
+
+        return point
+
+    def get_check_point(self, trader):
+        point = 0
+        current_pdf = trader.get_dataframe()
+
+        sma5 = algorithms.sma(current_pdf, 5)
+        sma20 = algorithms.sma(current_pdf, 20)
+        sma60 = algorithms.sma(current_pdf, 60)
+        # 단기 골든 크로스 MA(5,20)
+        if sma5.iloc[-1] > sma20.iloc[-1]:
+            print('단기 골든 크로스 MA(5,20)')
+            point += 1
+        
+        # 중기 골든 크로스 MA(20,60)
+        if sma20.iloc[-1] > sma60.iloc[-1]:
+            print('중기 골든 크로스 MA(20,60)')
+            point += 1
+
+        # 당일 거래 급증 종목(10일 평균 거래대비)
+        obv, obv_ema = algorithms.get_obv(current_pdf, 10)
+        if obv.iloc[-1] > obv_ema.iloc[-1]:
+            print('당일 거래 급증 종목')
+            point += 1
+        
+        # Stochastic slow(10,5,5) %K, %D 상향돌파
+        if algorithms.is_stc_slow_good(trader.get_dataframe(), 10, 5, 5) < 56:
+            print('Stochastic slow(10,5,5) %K, %D 상향돌파')
+            point += 1
+        
+        # MACD Osc(12,26,9) 0선 상향돌파
+        if algorithms.macd_line_over_than_signal(trader.get_dataframe(), 12, 26, 9):
+            print('MACD')
+            point += 1
+        
+        # RSI(14,9) Signal선 상향돌파
+        rsi9 = algorithms.rsi(current_pdf, 9)
+        rsi14 = algorithms.rsi(current_pdf, 14)
+        if rsi9.iloc[-1] > rsi14.iloc[-1]:
+            print('rsi')
+            point += 1
+
+        return point
 
     def check_week(self, ticker_code):
         try:
@@ -109,10 +157,14 @@ class StockMarket(BaseMarket):
             if self.week_trader.candles[1].trade_volume == 0:
                 return False
 
-            if self.is_nice_week(self.week_trader):
-                print('wow_week')
-                is_nice_week = True
+            current_rsi = algorithms.get_current_rsi(self.week_trader.get_dataframe(), 14)
+            current_price = self.week_trader.get_dataframe()['trade_price'].iloc[-1]
+            sma10 = algorithms.sma(self.week_trader.get_dataframe(), 10)
+            margin = algorithms.get_margin(current_price, sma10.iloc[-1])
+
+            if self.get_check_week_point(self.week_trader) >= 5 and current_rsi < 60 and margin <= 5 :
                 return True
+            return False
         except Exception as e:
             print("raise error ", e)
             return False
@@ -123,8 +175,12 @@ class StockMarket(BaseMarket):
             if self.day_trader.candles[1].trade_volume == 0:
                 return False
 
-            if self.is_nice_day(self.day_trader, 30):
-                print('wow_day!!!')
+            current_rsi = algorithms.get_current_rsi(self.day_trader.get_dataframe(), 14)
+            current_price = self.day_trader.get_dataframe()['trade_price'].iloc[-1]
+            sma10 = algorithms.sma(self.day_trader.get_dataframe(), 10)
+            margin = algorithms.get_margin(current_price, sma10.iloc[-1])
+
+            if self.get_check_point(self.day_trader) >= 5 and current_rsi < 60 and margin <= 2 :
                 return True
             return False
         except Exception as e:

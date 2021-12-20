@@ -10,7 +10,7 @@ def stc_slow(data, N=9, M=3, T=3) :
 
     return slow_k, slow_d
 
-def is_stc_slow_good(data, N=9, M=3, T=3) :
+def is_stc_slow_good(data, N=10, M=5, T=5) :
     L = data["low_price"].rolling(window=N).min()
     H = data["high_price"].rolling(window=N).max()
 

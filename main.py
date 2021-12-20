@@ -3,6 +3,7 @@ import time
  
 from mail import *
 from markets.stock_market import *
+from financial_stat import *
 import logging
 
 ticker_filename = 'ticker_code.txt'
@@ -28,20 +29,25 @@ def main():
             if ticker_code in except_list:
                 continue
 
+            fs = FinacialStat()
+            fs.init_fs(ticker_code)
+
             print('checking... ticker_code: ', ticker_code)
             if stock_market.check_week(ticker_code) :
-                to_mail = to_mail + '  good_week!!'
-                is_buy = True
+                if fs.is_continous_rising_quater(1) and fs.is_continous_rising_annual(1) :
+                    to_mail = to_mail + ' - week  '
+                    print('check fs week!!!!!!')
+                    is_buy = True
 
-            # if is_buy and stock_market.check_day(ticker_code) :
-            #     to_mail = to_mail + '  good_day!!'
-            #     is_buy = True
-            # else:
-            #     is_buy = False
+            if stock_market.check_day(ticker_code):
+                if fs.is_continous_rising_quater(1) and fs.is_continous_rising_annual(1) :
+                    to_mail = to_mail + ' - day  '
+                    print('check fs day!!!!!!')
+                    is_buy = True
 
             if is_buy:
                 to_send_mail_list.append(to_mail)
-                
+                    
         print(to_send_mail_list)
         send_mail('\r\n'.join(to_send_mail_list), "check stock result")
             
