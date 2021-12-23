@@ -51,105 +51,46 @@ class StockMarket(BaseMarket):
         except Exception as e:
             print("day_trader init fail: ", e)
 
-    def is_nice_week(self, trader):
-        current_rsi = algorithms.get_current_rsi(trader.get_dataframe(), 14)
-
-        self.logger.info('get_bollinger_bands_width(14) ==> ' + str(trader.get_bollinger_bands_width(14)))
-        self.logger.info('current rsi ==> ' + str(current_rsi))
-        self.logger.info('ma_volume(5), ma_volume(20) : ' + str(trader.ma_volume(5)) + ', ' + str(trader.ma_volume(20)))
-
-        sma10 = algorithms.sma(trader.get_dataframe(), 10)
-        sma20 = algorithms.sma(trader.get_dataframe(), 20)
-        rsi14 = algorithms.rsi(trader.get_dataframe(), 14)
-
-        if algorithms.is_stc_slow_good(trader.get_dataframe(), 9, 3, 3) < 58:
-            return True
-        return False
-
     def get_check_week_point(self, trader):
-        point = 0
         current_pdf = trader.get_dataframe()
-
-        sma5 = algorithms.sma(current_pdf, 5)
-        sma20 = algorithms.sma(current_pdf, 20)
-        sma10 = algorithms.sma(current_pdf, 10)
-        sma40 = algorithms.sma(current_pdf, 40)
-        # 단기 골든 크로스 MA(5,20)
-        if sma5.iloc[-1] > sma20.iloc[-1]:
-            print('단기 골든 크로스 MA(5,20)')
-            point += 1
-        
-        # 중기 골든 크로스 MA(10,40)
-        if sma10.iloc[-1] > sma40.iloc[-1]:
-            print('중기 골든 크로스 MA(10,40)')
-            point += 1
-
-        # 당일 거래 급증 종목(10일 평균 거래대비)
+        point = 0
         obv, obv_ema = algorithms.get_obv(current_pdf, 10)
-        if obv.iloc[-1] > obv_ema.iloc[-1]:
-            print('당일 거래 급증 종목')
+        if obv.iloc[-1] < obv_ema.iloc[-1]:
+            print('거래량이 마름')
             point += 1
         
         # Stochastic slow(10,5,5) %K, %D 상향돌파
-        if algorithms.is_stc_slow_good(trader.get_dataframe(), 9, 3, 3) < 56:
+        if algorithms.is_stc_slow_good(current_pdf, 9, 3, 3) < 30:
             print('Stochastic slow(9,3,3) %K, %D 상향돌파')
-            point += 1
-        
-        # MACD Osc(12,26,9) 0선 상향돌파
-        if algorithms.macd_line_over_than_signal(trader.get_dataframe(), 6, 19, 8):
-            print('MACD')
-            point += 1
-        
-        # RSI(14,9) Signal선 상향돌파
-        rsi9 = algorithms.rsi(current_pdf, 9)
-        rsi14 = algorithms.rsi(current_pdf, 14)
-        if rsi9.iloc[-1] > rsi14.iloc[-1]:
-            print('rsi')
             point += 1
 
         return point
 
     def get_check_point(self, trader):
-        point = 0
         current_pdf = trader.get_dataframe()
-
-        sma5 = algorithms.sma(current_pdf, 5)
-        sma20 = algorithms.sma(current_pdf, 20)
-        sma60 = algorithms.sma(current_pdf, 60)
-        # 단기 골든 크로스 MA(5,20)
-        if sma5.iloc[-1] > sma20.iloc[-1]:
-            print('단기 골든 크로스 MA(5,20)')
-            point += 1
-        
-        # 중기 골든 크로스 MA(20,60)
-        if sma20.iloc[-1] > sma60.iloc[-1]:
-            print('중기 골든 크로스 MA(20,60)')
-            point += 1
-
-        # 당일 거래 급증 종목(10일 평균 거래대비)
+        point = 0
         obv, obv_ema = algorithms.get_obv(current_pdf, 10)
-        if obv.iloc[-1] > obv_ema.iloc[-1]:
-            print('당일 거래 급증 종목')
+        if obv.iloc[-1] < obv_ema.iloc[-1]:
+            print('거래량이 마름')
             point += 1
         
         # Stochastic slow(10,5,5) %K, %D 상향돌파
-        if algorithms.is_stc_slow_good(trader.get_dataframe(), 10, 5, 5) < 56:
+        if algorithms.is_stc_slow_good(current_pdf, 10, 5, 5) < 30:
             print('Stochastic slow(10,5,5) %K, %D 상향돌파')
             point += 1
-        
-        # MACD Osc(12,26,9) 0선 상향돌파
-        if algorithms.macd_line_over_than_signal(trader.get_dataframe(), 12, 26, 9):
-            print('MACD')
-            point += 1
-        
-        # RSI(14,9) Signal선 상향돌파
-        rsi9 = algorithms.rsi(current_pdf, 9)
-        rsi14 = algorithms.rsi(current_pdf, 14)
-        if rsi9.iloc[-1] > rsi14.iloc[-1]:
-            print('rsi')
-            point += 1
-
+            
         return point
+
+    #나쁜 뉴스에도 주가 더이상 떨어지지 않는다면, 이는 부화뇌동파가 주식을 모두 팔아버렸다는 의미
+    #시장이 바닥권에서 움직이지 않고 머무른다.
+
+    #거래량이 많은 가운데 주가가 떨어지면 이는 좋은 신호다.
+    #거래량이 많으면 많을수록 주식은 소신파의 손으로 들어간다는 뜻.
+    #매수자의 질을 분석하는 것이 주식의 질을 분석하는 것보다 중요하다.
+    #매도자의 질을 분석하는 것이 매도 가치를 분석하는 것보다 중요하다.
+    #주식의 질이 나쁜 보유자의 손에 있으면, 최고의 주식도 주가가 떨어질수 있기 때문이다.
+    #주식이 소신파의 손에 많은가, 부화뇌동파의 손에 많은가.
+
 
     def check_week(self, ticker_code):
         try:
@@ -157,12 +98,7 @@ class StockMarket(BaseMarket):
             if self.week_trader.candles[1].trade_volume == 0:
                 return False
 
-            current_rsi = algorithms.get_current_rsi(self.week_trader.get_dataframe(), 14)
-            current_price = self.week_trader.get_dataframe()['trade_price'].iloc[-1]
-            sma10 = algorithms.sma(self.week_trader.get_dataframe(), 10)
-            margin = algorithms.get_margin(current_price, sma10.iloc[-1])
-
-            if self.get_check_week_point(self.week_trader) >= 5 and current_rsi < 60 and margin <= 5 :
+            if self.get_check_week_point(self.week_trader) >= 2 :
                 return True
             return False
         except Exception as e:
@@ -175,12 +111,7 @@ class StockMarket(BaseMarket):
             if self.day_trader.candles[1].trade_volume == 0:
                 return False
 
-            current_rsi = algorithms.get_current_rsi(self.day_trader.get_dataframe(), 14)
-            current_price = self.day_trader.get_dataframe()['trade_price'].iloc[-1]
-            sma10 = algorithms.sma(self.day_trader.get_dataframe(), 10)
-            margin = algorithms.get_margin(current_price, sma10.iloc[-1])
-
-            if self.get_check_point(self.day_trader) >= 5 and current_rsi < 60 and margin <= 2 :
+            if self.get_check_point(self.day_trader) >= 2  :
                 return True
             return False
         except Exception as e:

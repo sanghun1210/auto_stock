@@ -58,6 +58,9 @@ class FinacialStat():
                 if math.isnan(float(current_fs)):
                     continue
 
+                if current_fs == '-' :
+                    continue
+
                 # print(current_fs)
                 # print(pre_fs)
 
@@ -68,7 +71,7 @@ class FinacialStat():
 
         except Exception as e:
             print("raise error ", e)
-            return True
+            return False
 
     def is_continous_rising_annual(self, result_type):
         try:
@@ -83,6 +86,9 @@ class FinacialStat():
 
                 if math.isnan(float(current_fs)):
                     continue
+
+                if current_fs == '-' :
+                    continue
                 
                 if float(current_fs) > float(pre_fs):
                     return True
@@ -91,7 +97,7 @@ class FinacialStat():
 
         except Exception as e:
             print("raise error ", e)
-            return True  
+            return False  
 
 if __name__ == "__main__":
     fs = FinacialStat()

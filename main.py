@@ -40,7 +40,7 @@ def main():
                     is_buy = True
 
             if stock_market.check_day(ticker_code):
-                if fs.is_continous_rising_quater(1) and fs.is_continous_rising_annual(1) :
+                if fs.is_continous_rising_quater(1) :
                     to_mail = to_mail + ' - day  '
                     print('check fs day!!!!!!')
                     is_buy = True
