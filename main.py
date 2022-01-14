@@ -4,52 +4,74 @@ import time
 from mail import *
 from markets.stock_market import *
 from financial_stat import *
-import logging
+from stock_list import *
+import pickle
 
-ticker_filename = 'ticker_code.txt'
-except_list = ['052190', '033790', '053450', '044490', '003280' ]
+read_file_name = '2022-01-13-1400.txt'
+write_file_name = '2022-01-14-1400.txt'
 
+def get_aleady_check_list():
+    readList = []
+    try:
+        with open(read_file_name, 'rb') as lf:
+            readList = pickle.load(lf)
+    except Exception as e:    
+        print("get_aleady_check_list error ", e)
+    return readList
+    
 def main():
     to_send_mail_list = []
+    to_write_file_list = []
+    
     try:
-        logger = logging.getLogger()
-        logger.setLevel(logging.INFO)
-
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        file_handler = logging.FileHandler('stock_point.log')
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-
-        stock_market = StockMarket(logger)
-        tickers = stock_market.get_ticker_all(ticker_filename)
+        stock_market = StockMarket()
+        tickers = get_stock_list()
+        check_list = get_aleady_check_list()
 
         for ticker_code in tickers:
             to_mail = str(ticker_code)
             is_buy = False
-            if ticker_code in except_list:
-                continue
 
             fs = FinacialStat()
             fs.init_fs(ticker_code)
 
             print('checking... ticker_code: ', ticker_code)
+            pbr = fs.get_cuurent_quater_pbr()
+            if pbr == None or math.isnan(float(pbr)) == True or pbr >= 3.0 :
+                continue
+
+            if fs.is_continous_rising_quater(1) == False :
+                continue
+
             if stock_market.check_week(ticker_code) :
-                if fs.is_continous_rising_quater(1) and fs.is_continous_rising_annual(1) :
-                    to_mail = to_mail + ' - week  '
-                    print('check fs week!!!!!!')
-                    is_buy = True
+                to_mail = to_mail + ' - week  '
+                print('check fs week!!!!!!')
+                is_buy = True
 
             if stock_market.check_day(ticker_code):
-                if fs.is_continous_rising_quater(1) :
-                    to_mail = to_mail + ' - day  '
-                    print('check fs day!!!!!!')
-                    is_buy = True
+                to_mail = to_mail + ' - day  '
+                print('check fs day!!!!!!')
+                is_buy = True 
 
             if is_buy:
-                to_send_mail_list.append(to_mail)
-                    
+                to_write_file_list.append(str(ticker_code))
+
+                if str(ticker_code) in check_list:
+                    print('aleady in list')
+                    continue
+
+                per = fs.get_cuurent_quater_per()
+                if per != None and math.isnan(float(pbr)) == False  :
+                    to_mail = to_mail + ' per :  ' + str(per)
+                    print('per :' +  str(per))
+                    if per <= 43: 
+                        to_send_mail_list.append(to_mail)
+                else:
+                    to_send_mail_list.append(to_mail)
         print(to_send_mail_list)
         send_mail('\r\n'.join(to_send_mail_list), "check stock result")
+        with open(write_file_name, 'wb') as wf:
+            pickle.dump(to_write_file_list, wf)
             
     except Exception as e:    
         print("raise error ", e)

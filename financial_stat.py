@@ -25,6 +25,7 @@ class FinacialStat():
             #req.add_header('User-Agent', 'Mozilla/5.0')
             headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
             res = requests.get(url, headers=headers)
+            #print(res.text)
             df = pd.read_html(res.text)[3]
             #print(df)
 
@@ -40,6 +41,73 @@ class FinacialStat():
         except Exception as e:
             print("raise error ", e)
 
+    def get_cuurent_quater_pbr(self):
+        try:
+            column_count = len(self.quater_date.columns)
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.quater_date.columns[i]
+                current_fs = float(self.quater_date[current_idx].iloc[12])
+
+                if current_fs == '-' :
+                    continue
+
+                if math.isnan(float(current_fs)):
+                    continue
+
+                print(current_fs)
+                return float(current_fs)
+        except Exception as e:
+            print("error pbr ", e)
+            return 100
+
+    def get_cuurent_quater_per(self):
+        try:
+            column_count = len(self.quater_date.columns)
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.quater_date.columns[i]
+                current_fs = float(self.quater_date[current_idx].iloc[10])
+
+                if current_fs == '-' :
+                    continue
+
+                if math.isnan(float(current_fs)):
+                    continue
+
+                print(current_fs)
+                return float(current_fs)
+        except Exception as e:
+            print("error pbr ", e)
+            return 100
+
+    def is_continous_rising_quater_roe(self, result_type):
+        try:
+            column_count = len(self.quater_date.columns)
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.quater_date.columns[i]
+                pre_idx = self.quater_date.columns[i-1]
+
+                current_fs = self.quater_date[current_idx].iloc[result_type]
+                pre_fs = self.quater_date[pre_idx].iloc[result_type]
+
+                if current_fs == '-' or math.isnan(float(current_fs)):
+                    continue
+
+                if pre_fs == '-' or math.isnan(float(pre_fs)) :
+                    return True
+
+                if float(current_fs) > float(pre_fs):
+                    return True
+
+                return False
+            return False
+
+        except Exception as e:
+            print("raise error ", e)
+            return False
+
 
     #매출액 0
     #영업이익 1
@@ -52,22 +120,20 @@ class FinacialStat():
                 current_idx = self.quater_date.columns[i]
                 pre_idx = self.quater_date.columns[i-1]
 
-                current_fs = float(self.quater_date[current_idx].iloc[result_type])
-                pre_fs = float(self.quater_date[pre_idx].iloc[result_type])
+                current_fs = self.quater_date[current_idx].iloc[result_type]
+                pre_fs = self.quater_date[pre_idx].iloc[result_type]
 
-                if math.isnan(float(current_fs)):
+                if current_fs == '-' or math.isnan(float(current_fs)):
                     continue
 
-                if current_fs == '-' :
-                    continue
-
-                # print(current_fs)
-                # print(pre_fs)
+                if pre_fs == '-' or math.isnan(float(pre_fs)) :
+                    return True
 
                 if float(current_fs) > float(pre_fs):
                     return True
-                else : 
-                    return False
+
+                return False
+            return False
 
         except Exception as e:
             print("raise error ", e)
@@ -101,11 +167,19 @@ class FinacialStat():
 
 if __name__ == "__main__":
     fs = FinacialStat()
-    fs.init_fs('206400')
+    fs.init_fs('122350')
+    if fs.is_continous_rising_quater_roe(5):
+        print('roe true')
+    else:
+        print('roe false')
+
     if fs.is_continous_rising_quater(1):
         print('true')
     else:
         print('false')
+
+    fs.get_cuurent_quater_pbr()
+    fs.get_cuurent_quater_per()
 
         
 
