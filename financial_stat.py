@@ -129,7 +129,7 @@ class FinacialStat():
                 if pre_fs == '-' or math.isnan(float(pre_fs)) :
                     return True
 
-                if float(current_fs) > float(pre_fs):
+                if float(current_fs) > float(pre_fs) and float(current_fs) > 0:
                     return True
 
                 return False
@@ -147,19 +147,20 @@ class FinacialStat():
                 current_idx = self.annual_date.columns[i]
                 pre_idx = self.annual_date.columns[i-1]
 
-                current_fs = float(self.annual_date[current_idx].iloc[result_type])
-                pre_fs = float(self.annual_date[pre_idx].iloc[result_type])
+                current_fs = self.annual_date[current_idx].iloc[result_type]
+                pre_fs = self.annual_date[pre_idx].iloc[result_type]
 
-                if math.isnan(float(current_fs)):
+                if current_fs == '-' or math.isnan(float(current_fs)):
                     continue
 
-                if current_fs == '-' :
-                    continue
-                
-                if float(current_fs) > float(pre_fs):
+                if pre_fs == '-' or math.isnan(float(pre_fs)) :
                     return True
-                else : 
-                    return False
+
+                if float(current_fs) > float(pre_fs) and float(current_fs) > 0:
+                    return True
+
+                return False
+            return False
 
         except Exception as e:
             print("raise error ", e)

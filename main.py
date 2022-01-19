@@ -7,8 +7,8 @@ from financial_stat import *
 from stock_list import *
 import pickle
 
-read_file_name = '2022-01-13-1400.txt'
-write_file_name = '2022-01-14-1400.txt'
+read_file_name = '2022-01-17-1500.txt'
+write_file_name = '2022-01-18-1500.txt'
 
 def get_aleady_check_list():
     readList = []
@@ -37,37 +37,32 @@ def main():
 
             print('checking... ticker_code: ', ticker_code)
             pbr = fs.get_cuurent_quater_pbr()
-            if pbr == None or math.isnan(float(pbr)) == True or pbr >= 3.0 :
+            if pbr == None or math.isnan(float(pbr)) == True or pbr > 3 :
                 continue
 
-            if fs.is_continous_rising_quater(1) == False :
+            if fs.is_continous_rising_annual(1) == False :
                 continue
 
-            if stock_market.check_week(ticker_code) :
-                to_mail = to_mail + ' - week  '
-                print('check fs week!!!!!!')
-                is_buy = True
-
-            if stock_market.check_day(ticker_code):
-                to_mail = to_mail + ' - day  '
-                print('check fs day!!!!!!')
+            if stock_market.check_advenced(ticker_code) and \
+                stock_market.get_check_point(ticker_code) >= 6 :
+                to_mail = to_mail 
                 is_buy = True 
 
             if is_buy:
                 to_write_file_list.append(str(ticker_code))
-
                 if str(ticker_code) in check_list:
                     print('aleady in list')
                     continue
 
                 per = fs.get_cuurent_quater_per()
                 if per != None and math.isnan(float(pbr)) == False  :
-                    to_mail = to_mail + ' per :  ' + str(per)
-                    print('per :' +  str(per))
-                    if per <= 43: 
+                    to_mail = to_mail 
+                    if per <= 45: 
+                        print('wow!!!')
                         to_send_mail_list.append(to_mail)
                 else:
                     to_send_mail_list.append(to_mail)
+
         print(to_send_mail_list)
         send_mail('\r\n'.join(to_send_mail_list), "check stock result")
         with open(write_file_name, 'wb') as wf:

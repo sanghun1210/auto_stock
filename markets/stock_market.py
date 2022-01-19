@@ -8,6 +8,8 @@ from urllib.parse import urlencode
 
 import requests
 
+from markets.algorithms.obv import obv_is_good
+
 from .base_market import *
 from .week_trader import *
 from .day_trader import *
@@ -53,51 +55,38 @@ class StockMarket(BaseMarket):
     def get_check_week_point(self, trader):
         current_pdf = trader.get_dataframe()
         point = 0
-        # rsi10 = algorithms.get_current_rsi(current_pdf, 10)
-        # if rsi10 <= 40:
-        #     print('과매도')
-        #     point += 1
-
-        if algorithms.bbands_width(current_pdf, 10) <= 19:
-            print('긴 횡보')
+        rsi10 = algorithms.get_current_rsi(current_pdf, 10)
+        if rsi10 < 45:
             point += 1
 
-        #Stochastic slow(10,5,5) %K, %D 상향돌파
         slow_k, slow_d = algorithms.stc_slow(current_pdf, 9, 3, 3)
-        if slow_d.iloc[-1] <= 30:
-            print('Stochastic slow(9,3,3) %K, %D 상향돌파')
+        if slow_k.iloc[-1] <= 41 :
+            point += 1        
+
+        if slow_d.iloc[-1] < 37:
             point += 1
 
-        sma10 = algorithms.sma(current_pdf, 10)
-        if sma10.iloc[-1] > current_pdf['trade_price'].iloc[-1] :
+        if slow_k.iloc[-1] > slow_d.iloc[-1]:
             point += 1
 
         return point
 
-    def get_check_point(self, trader):
+    def get_check_day_point(self, trader):
         current_pdf = trader.get_dataframe()
         point = 0
-
-        # rsi10 = algorithms.get_current_rsi(current_pdf, 10)
-        # if rsi10 <= 39:
-        #     print('과매도')
-        #     point += 1
-
-        if algorithms.bbands_width(current_pdf, 10) <= 11:
-            print('긴 횡보')
+        rsi10 = algorithms.get_current_rsi(current_pdf, 10)
+        if rsi10 < 48:
             point += 1
-        
-        # Stochastic slow(10,5,5) %K, %D 상향돌파
+
         slow_k, slow_d = algorithms.stc_slow(current_pdf, 9, 3, 3)
-        if slow_d.iloc[-1] <= 30:
-            print('Stochastic slow(9,3,3) %K, %D 상향돌파')
+        if slow_k.iloc[-1] < 44:
             point += 1
 
-        sma10 = algorithms.sma(current_pdf, 10)
-        if sma10.iloc[-1] > current_pdf['trade_price'].iloc[-1] :
+        if slow_d.iloc[-1] < 45:
+            point+= 1
+
+        if algorithms.obv_is_good(current_pdf):
             point += 1
-    
-        return point
 
     #나쁜 뉴스에도 주가 더이상 떨어지지 않는다면, 이는 부화뇌동파가 주식을 모두 팔아버렸다는 의미
     #시장이 바닥권에서 움직이지 않고 머무른다.
@@ -111,28 +100,37 @@ class StockMarket(BaseMarket):
 
     #내가 찾아야 할것은 소신파의 손에 많은 좋은 주식
 
-    def check_week(self, ticker_code):
+    def check_advenced(self, ticker_code):
         try:
-            self.week_trader = WeekTrader(ticker_code, 30)
+            self.week_trader = WeekTrader(ticker_code, 40)
             if self.week_trader.candles[1].trade_volume == 0:
                 return False
 
-            if self.get_check_week_point(self.week_trader) >= 3 :
-                return True
+            self.day_trader = DayTrader(ticker_code, 120)
+            week_pdf = self.week_trader.get_dataframe()
+            day_pdf = self.day_trader.get_dataframe()
+
+            if algorithms.bbands_width(week_pdf, 10) < 20  :
+                if algorithms.macd_line_over_than_signal2(day_pdf, 12, 26, 9) or algorithms.macd_line_over_than_signal2(week_pdf, 12, 26, 9):
+                    return True
+                
             return False
         except Exception as e:
             print("raise error ", e)
             return False
 
-    def check_day(self, ticker_code):
+    def get_check_point(self, ticker_code):
         try:
-            self.day_trader = DayTrader(ticker_code, 100)
-            if self.day_trader.candles[1].trade_volume == 0:
-                return False
+            week_point = 0
+            day_point = 0
 
-            if self.get_check_point(self.day_trader) >= 3  :
-                return True
-            return False
+            if self.week_trader != None:
+                week_point = self.get_check_week_point(self.week_trader)  
+
+            if self.day_trader != None:
+                day_point = self.get_check_week_point(self.day_trader)  
+
+            return week_point + day_point
         except Exception as e:
             print("raise error ", e)
             return False

@@ -3,9 +3,12 @@ import pandas as pd
 import csv
 
 def get_stock_list():
-    krx_list = fdr.StockListing("KRX")
-    krx_list.to_csv('test.csv', encoding="cp949")
-    #print(krx_list)
+    # try:
+    #     krx_list = fdr.StockListing("KRX")
+    #     krx_list.to_csv('test.csv', encoding="cp949")
+    # except Exception as e:    
+    #     print("raise error ", e)
+    
     code = []
     with open('test.csv', mode='r') as target_csv:
         df = csv.DictReader(target_csv, delimiter=',')
