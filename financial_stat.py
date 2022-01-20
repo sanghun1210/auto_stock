@@ -41,7 +41,7 @@ class FinacialStat():
         except Exception as e:
             print("raise error ", e)
 
-    def get_cuurent_quater_pbr(self):
+    def get_current_pbr(self):
         try:
             column_count = len(self.quater_date.columns)
 
@@ -54,12 +54,50 @@ class FinacialStat():
 
                 if math.isnan(float(current_fs)):
                     continue
-
-                print(current_fs)
                 return float(current_fs)
         except Exception as e:
             print("error pbr ", e)
             return 100
+
+    def get_current_roe(self):
+        try:
+            column_count = len(self.quater_date.columns)
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.quater_date.columns[i]
+                current_fs = float(self.quater_date[current_idx].iloc[5])
+
+                if current_fs == '-' :
+                    continue
+
+                if math.isnan(float(current_fs)):
+                    continue
+
+                return float(current_fs)
+        except Exception as e:
+            print("error pbr ", e)
+            return -1
+
+    def get_pre_roe(self):
+        try:
+            column_count = len(self.quater_date.columns)
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.quater_date.columns[i]
+                pre_idx = self.quater_date.columns[i-1]
+                current_fs = float(self.quater_date[current_idx].iloc[5])
+                pre_fs = float(self.quater_date[pre_idx].iloc[5])
+
+                if current_fs == '-' :
+                    continue
+
+                if math.isnan(float(current_fs)):
+                    continue
+
+                return float(pre_fs)
+        except Exception as e:
+            print("error pbr ", e)
+            return -1
 
     def get_cuurent_quater_per(self):
         try:
@@ -79,34 +117,7 @@ class FinacialStat():
                 return float(current_fs)
         except Exception as e:
             print("error pbr ", e)
-            return 100
-
-    def is_continous_rising_quater_roe(self, result_type):
-        try:
-            column_count = len(self.quater_date.columns)
-
-            for i in reversed(range(column_count)) :
-                current_idx = self.quater_date.columns[i]
-                pre_idx = self.quater_date.columns[i-1]
-
-                current_fs = self.quater_date[current_idx].iloc[result_type]
-                pre_fs = self.quater_date[pre_idx].iloc[result_type]
-
-                if current_fs == '-' or math.isnan(float(current_fs)):
-                    continue
-
-                if pre_fs == '-' or math.isnan(float(pre_fs)) :
-                    return True
-
-                if float(current_fs) > float(pre_fs):
-                    return True
-
-                return False
-            return False
-
-        except Exception as e:
-            print("raise error ", e)
-            return False
+            return -1
 
 
     #매출액 0
@@ -119,20 +130,54 @@ class FinacialStat():
             for i in reversed(range(column_count)) :
                 current_idx = self.quater_date.columns[i]
                 pre_idx = self.quater_date.columns[i-1]
+                third_idx = self.quater_date.columns[i-2]
 
                 current_fs = self.quater_date[current_idx].iloc[result_type]
                 pre_fs = self.quater_date[pre_idx].iloc[result_type]
+                third_fs = self.quater_date[third_idx].iloc[result_type]
 
                 if current_fs == '-' or math.isnan(float(current_fs)):
                     continue
 
                 if pre_fs == '-' or math.isnan(float(pre_fs)) :
-                    return True
+                    return False
 
-                if float(current_fs) > float(pre_fs) and float(current_fs) > 0:
+                if float(current_fs) > float(pre_fs) :
                     return True
+                else :
+                    return False
+            return False
 
-                return False
+        except Exception as e:
+            print("raise error ", e)
+            return False
+
+    def is_continous_rising_quater_third(self, result_type):
+        try:
+            column_count = len(self.quater_date.columns)
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.quater_date.columns[i]
+                pre_idx = self.quater_date.columns[i-1]
+                third_idx = self.quater_date.columns[i-2]
+
+                current_fs = self.quater_date[current_idx].iloc[result_type]
+                pre_fs = self.quater_date[pre_idx].iloc[result_type]
+                third_fs = self.quater_date[third_idx].iloc[result_type]
+
+                if current_fs == '-' or math.isnan(float(current_fs)):
+                    continue
+
+                if pre_fs == '-' or math.isnan(float(pre_fs)) :
+                    return False
+
+                if third_fs == '-' or math.isnan(float(third_fs)) :
+                    return False
+
+                if float(current_fs) > float(pre_fs) > float(third_fs) :
+                    return True
+                else:
+                    return False
             return False
 
         except Exception as e:
@@ -168,19 +213,21 @@ class FinacialStat():
 
 if __name__ == "__main__":
     fs = FinacialStat()
-    fs.init_fs('122350')
-    if fs.is_continous_rising_quater_roe(5):
-        print('roe true')
-    else:
-        print('roe false')
+    fs.init_fs('049470')
+    # if fs.is_continous_rising_quater_roe(5):
+    #     print('roe true')
+    # else:
+    #     print('roe false')
 
-    if fs.is_continous_rising_quater(1):
-        print('true')
-    else:
-        print('false')
+    # if fs.is_continous_rising_quater(1):
+    #     print('true')
+    # else:
+    #     print('false')
 
-    fs.get_cuurent_quater_pbr()
-    fs.get_cuurent_quater_per()
+    # fs.get_cuurent_quater_pbr()
+    # fs.get_cuurent_quater_per()
+
+    fs.is_continous_rising_quater_third(5)
 
         
 

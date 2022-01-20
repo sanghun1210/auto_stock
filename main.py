@@ -18,10 +18,58 @@ def get_aleady_check_list():
     except Exception as e:    
         print("get_aleady_check_list error ", e)
     return readList
+
+#재무분석
+def check_fs(ticker_code):
+    try:
+        fs = FinacialStat()
+        fs.init_fs(ticker_code)
+
+        print('checking... ticker_code: ', ticker_code)
+        current_pbr = fs.get_current_pbr()
+        if current_pbr == None or math.isnan(float(current_pbr)) == True or current_pbr > 2.4 :
+            return False
+
+        current_roe = fs.get_current_roe()
+        pre_roe = fs.get_pre_roe()
+
+        print('current_pbr, current_roe, pre_roe :' + str(current_pbr) + ' ' + str(current_roe) + ' ' + str(pre_roe) )
+        #ROE 7이상 PBR 0.5 미만
+        if current_roe > 7 and current_pbr < 0.5:
+            print('#ROE 7이상 PBR 0.5 미만')
+            return 1
+
+        #영업이익 증가, ROE 증가(1.5이상)
+        if fs.is_continous_rising_quater(1) and fs.is_continous_rising_quater(5) and \
+            (current_roe > (pre_roe +1.5)):
+            print('#영업이익 증가, ROE 증가(1.5이상)')
+            return 2
+
+        #ROE가 3분기 이상 증가
+        if fs.is_continous_rising_quater_third(5):
+            print('#ROE가 3분기 이상 증가')
+            return 3
+
+        #영업이익 3분기 이상 증가
+        if fs.is_continous_rising_quater_third(1):
+            print('#영업이익 3분기 이상 증가')
+            return 4
+
+        #todo : PBR이 3분기 이상 낮아짐
+        return 0
+    except Exception as e:    
+        print("raise error ", e)
+        return 0
     
 def main():
     to_send_mail_list = []
     to_write_file_list = []
+
+
+    to_send_mail_list.append('1 : ROE 7이상 PBR 0.5 미만')
+    to_send_mail_list.append('2 : 영업이익 증가, ROE 증가(1.5이상) -> ROE가 얼마나 증가했는지 체크 필요(많이 오를수록 좋다. 3이상)')
+    to_send_mail_list.append('3 : ROE가 3분기 이상 증가 -> ROE가 얼마나 증가했는지 체크 필요(많이오를수록 좋다.)')
+    to_send_mail_list.append('4 : 영업이익 3분기 이상 증가 -> 작년에 비해서 얼마나 증가했는가')
     
     try:
         stock_market = StockMarket()
@@ -32,19 +80,13 @@ def main():
             to_mail = str(ticker_code)
             is_buy = False
 
-            fs = FinacialStat()
-            fs.init_fs(ticker_code)
+            result = check_fs(ticker_code)
 
-            print('checking... ticker_code: ', ticker_code)
-            pbr = fs.get_cuurent_quater_pbr()
-            if pbr == None or math.isnan(float(pbr)) == True or pbr > 3 :
-                continue
-
-            if fs.is_continous_rising_annual(1) == False :
+            if result == 0:
                 continue
 
             if stock_market.check_advenced(ticker_code) and \
-                stock_market.get_check_point(ticker_code) >= 6 :
+                stock_market.get_check_point(ticker_code) >= 5 :
                 to_mail = to_mail 
                 is_buy = True 
 
@@ -53,15 +95,9 @@ def main():
                 if str(ticker_code) in check_list:
                     print('aleady in list')
                     continue
-
-                per = fs.get_cuurent_quater_per()
-                if per != None and math.isnan(float(pbr)) == False  :
-                    to_mail = to_mail 
-                    if per <= 45: 
-                        print('wow!!!')
-                        to_send_mail_list.append(to_mail)
                 else:
-                    to_send_mail_list.append(to_mail)
+                    print('wow!!!')
+                    to_send_mail_list.append(to_mail + ' favorite code : ' + str(result))
 
         print(to_send_mail_list)
         send_mail('\r\n'.join(to_send_mail_list), "check stock result")
