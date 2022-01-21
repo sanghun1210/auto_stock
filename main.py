@@ -5,10 +5,11 @@ from mail import *
 from markets.stock_market import *
 from financial_stat import *
 from stock_list import *
+from investor_trends import *
 import pickle
 
-read_file_name = '2022-01-17-1500.txt'
-write_file_name = '2022-01-18-1500.txt'
+read_file_name = '2022-01-17-1501.txt'
+write_file_name = '2022-01-19-1500.txt'
 
 def get_aleady_check_list():
     readList = []
@@ -33,30 +34,31 @@ def check_fs(ticker_code):
         current_roe = fs.get_current_roe()
         pre_roe = fs.get_pre_roe()
 
-        print('current_pbr, current_roe, pre_roe :' + str(current_pbr) + ' ' + str(current_roe) + ' ' + str(pre_roe) )
+        #print('current_pbr, current_roe, pre_roe :' + str(current_pbr) + ' ' + str(current_roe) + ' ' + str(pre_roe) )
         #ROE 7이상 PBR 0.5 미만
+        count = 0
         if current_roe > 7 and current_pbr < 0.5:
-            print('#ROE 7이상 PBR 0.5 미만')
-            return 1
+            #print('#ROE 7이상 PBR 0.5 미만')
+            count += 1
 
         #영업이익 증가, ROE 증가(1.5이상)
         if fs.is_continous_rising_quater(1) and fs.is_continous_rising_quater(5) and \
             (current_roe > (pre_roe +1.5)):
-            print('#영업이익 증가, ROE 증가(1.5이상)')
-            return 2
+            #print('#영업이익 증가, ROE 증가(1.5이상)')
+            count += 2
 
         #ROE가 3분기 이상 증가
         if fs.is_continous_rising_quater_third(5):
-            print('#ROE가 3분기 이상 증가')
-            return 3
+            #print('#ROE가 3분기 이상 증가')
+            count += 4
 
         #영업이익 3분기 이상 증가
         if fs.is_continous_rising_quater_third(1):
-            print('#영업이익 3분기 이상 증가')
-            return 4
+            #print('#영업이익 3분기 이상 증가')
+            count += 8
 
         #todo : PBR이 3분기 이상 낮아짐
-        return 0
+        return count
     except Exception as e:    
         print("raise error ", e)
         return 0
@@ -68,8 +70,8 @@ def main():
 
     to_send_mail_list.append('1 : ROE 7이상 PBR 0.5 미만')
     to_send_mail_list.append('2 : 영업이익 증가, ROE 증가(1.5이상) -> ROE가 얼마나 증가했는지 체크 필요(많이 오를수록 좋다. 3이상)')
-    to_send_mail_list.append('3 : ROE가 3분기 이상 증가 -> ROE가 얼마나 증가했는지 체크 필요(많이오를수록 좋다.)')
-    to_send_mail_list.append('4 : 영업이익 3분기 이상 증가 -> 작년에 비해서 얼마나 증가했는가')
+    to_send_mail_list.append('4 : ROE가 3분기 이상 증가 -> ROE가 얼마나 증가했는지 체크 필요(많이오를수록 좋다.)')
+    to_send_mail_list.append('8 : 영업이익 3분기 이상 증가 -> 작년에 비해서 얼마나 증가했는가')
     
     try:
         stock_market = StockMarket()
@@ -81,8 +83,12 @@ def main():
             is_buy = False
 
             result = check_fs(ticker_code)
-
             if result == 0:
+                continue
+
+            it = InvestorTrends(str(ticker_code))
+            print(it.get_cumulative_trading_volume_agency(5) ,it.get_cumulative_trading_volume_foreigner(5) )
+            if it.get_cumulative_trading_volume_agency(5) < 0 and it.get_cumulative_trading_volume_foreigner(5) < 0:
                 continue
 
             if stock_market.check_advenced(ticker_code) and \
@@ -97,8 +103,9 @@ def main():
                     continue
                 else:
                     print('wow!!!')
-                    to_send_mail_list.append(to_mail + ' favorite code : ' + str(result))
-
+                    agency_count = it.get_buy_day_count_agency(5)
+                    foreigner_count = it.get_buy_day_count_foreigner(5)
+                    to_send_mail_list.append(to_mail + ' favorite code : ' + str(result) + ' trade_count : ' + str(agency_count)+ ', ' + str(foreigner_count))
         print(to_send_mail_list)
         send_mail('\r\n'.join(to_send_mail_list), "check stock result")
         with open(write_file_name, 'wb') as wf:

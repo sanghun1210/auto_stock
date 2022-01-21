@@ -10,7 +10,7 @@ def get_stock_list():
     #     print("raise error ", e)
     
     code = []
-    with open('test.csv', mode='r') as target_csv:
+    with open('test.csv', mode='r', encoding='cp949') as target_csv:
         df = csv.DictReader(target_csv, delimiter=',')
         for n, row in enumerate(df):
             if not n:#skip header

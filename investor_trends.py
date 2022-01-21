@@ -35,14 +35,13 @@ class InvestorTrends():
     def get_cumulative_trading_volume_agency(self, period):
         item_len = len(self.df)
         sum = 0
-        count = 1
+        count = 0
         for i in range(1, item_len):
             sale_volume = self.df['기관'].iloc[i]
             if math.isnan(float(sale_volume)):
                 continue
             sum += sale_volume
             count+=1
-            print(sum)
             if count == period:
                 break
         return sum
@@ -51,23 +50,59 @@ class InvestorTrends():
         item_len = len(self.df)
         pds = pd.Series(self.df['외국인'].items())
         sum = 0
-        count = 1
+        count = 0
         for row in pds[0][1]:
             sale_volume = row
             if math.isnan(float(sale_volume)):
                 continue
             
             sum += sale_volume
-            count+=1
-            print(sum)
+            count += 1
             if count == period:
                 break
         return sum
 
+    def get_buy_day_count_foreigner(self, period):
+        item_len = len(self.df)
+        pds = pd.Series(self.df['외국인'].items())
+        sum = 0
+        count = 0
+        for row in pds[0][1]:
+            sale_volume = row
+            if math.isnan(float(sale_volume)):
+                continue
+
+            if sale_volume > 0:
+                sum += 1
+            
+            count += 1
+            if count == period:
+                break
+        return sum
+
+    def get_buy_day_count_agency(self, period):
+        item_len = len(self.df)
+        sum = 0
+        count = 0
+        for i in range(1, item_len):
+            sale_volume = self.df['기관'].iloc[i]
+            if math.isnan(float(sale_volume)):
+                continue
+
+            if sale_volume > 0:
+                sum += 1
+            count += 1
+            if count == period:
+                break
+        return sum
+
+
+
+
 if __name__ == "__main__":
     fs = InvestorTrends('049470')
     #print(fs.get_cumulative_trading_volume_agency(5))
-    print(fs.is_good_trend_foreigner(10))
+    print(fs.get_cumulative_trading_volume_foreigner(5))
 
 
 
