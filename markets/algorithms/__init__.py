@@ -13,3 +13,5 @@ from .double_moving_average import *
 from .basic_trend_following import *
 from .volatility_trend_following import *
 from .super_trend import *
+from .force_index import *
+from .adx import *

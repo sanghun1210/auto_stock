@@ -18,7 +18,6 @@ class InvestorTrends():
             self.df.columns = self.df.columns.droplevel(1)
             #print(self.df)
 
-
             # today = datetime.datetime.today()
             # str_today = today.strftime("%Y%m%d")
             # url = f'https://finance.naver.com/sise/investorDealTrendDay.nhn?bizdate={str_today}&sosok=&page=1&code={str(ticker)}'
@@ -36,11 +35,13 @@ class InvestorTrends():
         item_len = len(self.df)
         sum = 0
         count = 0
-        for i in range(1, item_len):
+        for i in range(0, item_len):
             sale_volume = self.df['기관'].iloc[i]
+            sale_volume = str(sale_volume).replace(',','')
             if math.isnan(float(sale_volume)):
                 continue
-            sum += sale_volume
+            #print(float(sale_volume))
+            sum += float(sale_volume)
             count+=1
             if count == period:
                 break
@@ -53,10 +54,11 @@ class InvestorTrends():
         count = 0
         for row in pds[0][1]:
             sale_volume = row
+            sale_volume = str(sale_volume).replace(',','')
             if math.isnan(float(sale_volume)):
                 continue
             
-            sum += sale_volume
+            sum += float(sale_volume)
             count += 1
             if count == period:
                 break
@@ -69,10 +71,11 @@ class InvestorTrends():
         count = 0
         for row in pds[0][1]:
             sale_volume = row
+            sale_volume = str(sale_volume).replace(',','')
             if math.isnan(float(sale_volume)):
                 continue
 
-            if sale_volume > 0:
+            if float(sale_volume) > 0:
                 sum += 1
             
             count += 1
@@ -84,25 +87,23 @@ class InvestorTrends():
         item_len = len(self.df)
         sum = 0
         count = 0
-        for i in range(1, item_len):
+        for i in range(0, item_len):
             sale_volume = self.df['기관'].iloc[i]
+            sale_volume = str(sale_volume).replace(',','')
             if math.isnan(float(sale_volume)):
                 continue
 
-            if sale_volume > 0:
+            if float(sale_volume) > 0:
                 sum += 1
             count += 1
             if count == period:
                 break
         return sum
 
-
-
-
 if __name__ == "__main__":
-    fs = InvestorTrends('049470')
-    #print(fs.get_cumulative_trading_volume_agency(5))
-    print(fs.get_cumulative_trading_volume_foreigner(5))
+    fs = InvestorTrends('000680')
+    print(fs.get_cumulative_trading_volume_agency(20))
+    #print(fs.get_cumulative_trading_volume_foreigner(10))
 
 
 

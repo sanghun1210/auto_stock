@@ -1,10 +1,10 @@
 import pandas as pd
 from pandas_datareader import data
 
-def ema(pd_dataframe):
+def ema(pd_dataframe, period):
     close = pd_dataframe['trade_price']
 
-    num_periods = 20 # number of days over which to average
+    num_periods = period # number of days over which to average
     K = 2 / (num_periods + 1) # smoothing constant
     ema_p = 0
 
@@ -22,11 +22,13 @@ def ema(pd_dataframe):
 
     close_price = pd_dataframe['ClosePrice']
     ema = pd_dataframe['Exponential20DayMovingAverage']
+    return ema
 
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
 
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111, ylabel='Google price in $')
-    close_price.plot(ax=ax1, color='g', lw=2., legend=True)
-    ema.plot(ax=ax1, color='b', lw=2., legend=True)
-    plt.show()
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(111, ylabel='Google price in $')
+    # close_price.plot(ax=ax1, color='g', lw=2., legend=True)
+    # ema.plot(ax=ax1, color='b', lw=2., legend=True)
+    # plt.show()
+
