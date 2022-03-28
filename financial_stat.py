@@ -38,6 +38,7 @@ class FinacialStat():
             # '최근 연간 실적'과 '최근 분기 실적'으로 나눔
             self.annual_date = pd.DataFrame(df).xs('최근 연간 실적', axis=1)
             self.quater_date = pd.DataFrame(df).xs('최근 분기 실적', axis=1)
+            #print(self.annual_date)
         except Exception as e:
             print("raise error ", e)
 
@@ -192,6 +193,8 @@ class FinacialStat():
                 current_idx = self.annual_date.columns[i]
                 pre_idx = self.annual_date.columns[i-1]
 
+                #print(self.annual_date.columns)
+
                 current_fs = self.annual_date[current_idx].iloc[result_type]
                 pre_fs = self.annual_date[pre_idx].iloc[result_type]
 
@@ -213,7 +216,7 @@ class FinacialStat():
 
 if __name__ == "__main__":
     fs = FinacialStat()
-    fs.init_fs('049470')
+    fs.init_fs('353590')
     # if fs.is_continous_rising_quater_roe(5):
     #     print('roe true')
     # else:
@@ -227,7 +230,7 @@ if __name__ == "__main__":
     # fs.get_cuurent_quater_pbr()
     # fs.get_cuurent_quater_per()
 
-    fs.is_continous_rising_quater_third(5)
+    fs.is_continous_rising_annual(3)
 
         
 

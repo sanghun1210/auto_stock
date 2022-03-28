@@ -32,78 +32,98 @@ class InvestorTrends():
             print("raise error ", e)
 
     def get_cumulative_trading_volume_agency(self, period):
-        item_len = len(self.df)
-        sum = 0
-        count = 0
-        for i in range(0, item_len):
-            sale_volume = self.df['기관'].iloc[i]
-            sale_volume = str(sale_volume).replace(',','')
-            if math.isnan(float(sale_volume)):
-                continue
-            #print(float(sale_volume))
-            sum += float(sale_volume)
-            count+=1
-            if count == period:
-                break
-        return sum
+        try:
+            item_len = len(self.df)
+            sum = 0
+            count = 0
+            for i in range(0, item_len):
+                sale_volume = self.df['기관'].iloc[i]
+                sale_volume = str(sale_volume).replace(',','')
+                if math.isnan(float(sale_volume)):
+                    continue
+                #print(float(sale_volume))
+                sum += float(sale_volume)
+                count+=1
+                if count == period:
+                    break
+            return sum
+            
+        except Exception as e:
+            print("raise error ", e)
+            print(self.df)
+            return 0
 
     def get_cumulative_trading_volume_foreigner(self, period):
-        item_len = len(self.df)
-        pds = pd.Series(self.df['외국인'].items())
-        sum = 0
-        count = 0
-        for row in pds[0][1]:
-            sale_volume = row
-            sale_volume = str(sale_volume).replace(',','')
-            if math.isnan(float(sale_volume)):
-                continue
-            
-            sum += float(sale_volume)
-            count += 1
-            if count == period:
-                break
-        return sum
+        try:
+            item_len = len(self.df)
+            pds = pd.Series(self.df['외국인'].items())
+            sum = 0
+            count = 0
+            for row in pds[0][1]:
+                sale_volume = row
+                sale_volume = str(sale_volume).replace(',','')
+                if math.isnan(float(sale_volume)):
+                    continue
+                
+                sum += float(sale_volume)
+                count += 1
+                if count == period:
+                    break
+            return sum
+        except Exception as e:
+            print("raise error ", e)
+            print(self.df)
+            return 0
+
 
     def get_buy_day_count_foreigner(self, period):
-        item_len = len(self.df)
-        pds = pd.Series(self.df['외국인'].items())
-        sum = 0
-        count = 0
-        for row in pds[0][1]:
-            sale_volume = row
-            sale_volume = str(sale_volume).replace(',','')
-            if math.isnan(float(sale_volume)):
-                continue
+        try:
+            item_len = len(self.df)
+            pds = pd.Series(self.df['외국인'].items())
+            sum = 0
+            count = 0
+            for row in pds[0][1]:
+                sale_volume = row
+                sale_volume = str(sale_volume).replace(',','')
+                if math.isnan(float(sale_volume)):
+                    continue
 
-            if float(sale_volume) > 0:
-                sum += 1
-            
-            count += 1
-            if count == period:
-                break
-        return sum
+                if float(sale_volume) > 0:
+                    sum += 1
+                
+                count += 1
+                if count == period:
+                    break
+            return sum
+        except Exception as e:
+            print("raise error ", e)
+            return 0
 
     def get_buy_day_count_agency(self, period):
-        item_len = len(self.df)
-        sum = 0
-        count = 0
-        for i in range(0, item_len):
-            sale_volume = self.df['기관'].iloc[i]
-            sale_volume = str(sale_volume).replace(',','')
-            if math.isnan(float(sale_volume)):
-                continue
+        try:
+            item_len = len(self.df)
+            sum = 0
+            count = 0
+            for i in range(0, item_len):
+                sale_volume = self.df['기관'].iloc[i]
+                sale_volume = str(sale_volume).replace(',','')
+                if math.isnan(float(sale_volume)):
+                    continue
 
-            if float(sale_volume) > 0:
-                sum += 1
-            count += 1
-            if count == period:
-                break
-        return sum
+                if float(sale_volume) > 0:
+                    sum += 1
+                count += 1
+                if count == period:
+                    break
+            return sum
+        except Exception as e:
+            print("raise error ", e)
+            return 0
 
 if __name__ == "__main__":
-    fs = InvestorTrends('000680')
+    fs = InvestorTrends('950110')
     print(fs.get_cumulative_trading_volume_agency(20))
-    #print(fs.get_cumulative_trading_volume_foreigner(10))
+    print(fs.get_cumulative_trading_volume_foreigner(950110))
 
 
 

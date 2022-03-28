@@ -52,25 +52,6 @@ class StockMarket(BaseMarket):
         except Exception as e:
             print("day_trader init fail: ", e)
 
-    def get_check_week_point(self, trader):
-        current_pdf = trader.get_dataframe()
-        point = 0
-        rsi10 = algorithms.get_current_rsi(current_pdf, 10)
-        if rsi10 < 45:
-            point += 1
-
-        slow_k, slow_d = algorithms.stc_slow(current_pdf, 9, 3, 3)
-        if slow_k.iloc[-1] <= 41 :
-            point += 1        
-
-        if slow_d.iloc[-1] < 36:
-            point += 1
-
-        if algorithms.obv_is_good(current_pdf):
-            point += 1
-
-        return point
-
     def get_check_day_point(self, trader):
         current_pdf = trader.get_dataframe()
         point = 0
@@ -80,21 +61,25 @@ class StockMarket(BaseMarket):
         # https://www.brokerxplorer.com/article/how-to-master-the-triple-screen-trading-strategy-1547
         # 시장상황에 따라 D값을 조정.
         # slow_k, slow_d = algorithms.stc_slow(current_pdf, 9, 3, 3)
-        # if slow_d.iloc[-1] <= 48 :
+        # if slow_d.iloc[-1] <= 65 :
         #     print('단기 오실레이터가 낮음')
+        #     point += 1
+
+        # res = algorithms.adx(current_pdf['high_price'], current_pdf['low_price'], current_pdf['trade_price'], 13)
+        # if res['DMP_13'].iloc[-1] > res['DMN_13'].iloc[-1] and res['ADX_13'].iloc[-1] > res['DMN_13'].iloc[-1] and res['ADX_13'].iloc[-1] < res['DMP_13'].iloc[-1]:
         #     point += 1
         
         # 강도지수의 13일 이동평균을 구하면 황소와 곰의 세력의 변화를 알수 있다.
         mfi = algorithms.force_index(current_pdf, 13)
         if mfi['ForceIndex'].iloc[-1] > 0:
-            print('단기 강도 지수 (+) 매수시점 ')
+            #print('단기 강도 지수 (+) 매수시점 ')
             point +=1
 
         
         # 매수 시점 파악에 용이
         fi = algorithms.force_index(current_pdf, 2)
         if fi['ForceIndex'].iloc[-1] < 0:
-            print('초단기 강도 지수 (-) 매수시점 ')
+            #print('초단기 강도 지수 (-) 매수시점 ')
             point +=1
             
         return point
@@ -110,17 +95,17 @@ class StockMarket(BaseMarket):
         # ADX_13     
         # DMP_13     
         # DMN_13
-        res = algorithms.adx(current_pdf['high_price'], current_pdf['low_price'], current_pdf['trade_price'], 13)
-        if res['DMP_13'].iloc[-1] > res['DMN_13'].iloc[-1] and res['ADX_13'].iloc[-1] > res['DMN_13'].iloc[-1] and res['ADX_13'].iloc[-1] < res['DMP_13'].iloc[-1] :
-            point += 1
+        # res = algorithms.adx(current_pdf['high_price'], current_pdf['low_price'], current_pdf['trade_price'], 13)
+        # if res['DMP_13'].iloc[-1] > res['DMN_13'].iloc[-1] and res['ADX_13'].iloc[-1] > res['DMN_13'].iloc[-1] :
+        #     point += 1
         
         # D로 측정
         # https://www.dailyforex.com/forex-articles/2020/09/elder-triple-screen-system/151378
         # https://www.brokerxplorer.com/article/how-to-master-the-triple-screen-trading-strategy-1547
         # 시장상황에 따라 D값을 조정.
         slow_k, slow_d = algorithms.stc_slow(current_pdf, 9, 3, 3)
-        if slow_d.iloc[-1] <= 32 :
-            print('강세 다이버전스')
+        if slow_d.iloc[-1] <= 33 :
+            #print('강세 다이버전스')
             point += 1
             
         return point
@@ -155,9 +140,26 @@ class StockMarket(BaseMarket):
                 return False
 
             week_pdf = self.week_trader.get_dataframe()
-            if algorithms.bbands_width(week_pdf, 10) <= 27 :
-                if algorithms.macd_line_over_than_signal2(week_pdf, 12, 26, 9) :
-                    return True
+            slow_k, slow_d = algorithms.stc_slow(week_pdf, 9, 3, 3)
+
+            # 
+            # if algorithms.macd_line_over_than_signal2(week_pdf, 12, 26, 9) and \
+            #     slow_k.iloc[-1] < 58 :
+            #     return True
+
+            # bw = algorithms.bbands_width(week_pdf, 10)
+
+            
+            # week_ema = algorithms.ema(week_pdf, 13)
+
+            # if week_ema.iloc[-1] <= week_pdf['trade_price'].iloc[-1] and \
+            #     slow_k.iloc[-1] <= 65 :
+            #     return True
+
+            res = algorithms.adx(week_pdf['high_price'], week_pdf['low_price'], week_pdf['trade_price'], 13)
+            if algorithms.macd_line_over_than_signal2(week_pdf, 12, 26, 9) and res['DMP_13'].iloc[-1] > res['DMN_13'].iloc[-1] and \
+                slow_k.iloc[-1] < 65 :
+                return True
                 
             return False
         except Exception as e:

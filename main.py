@@ -8,8 +8,8 @@ from stock_list import *
 from investor_trends import *
 import pickle
 
-read_file_name = '2022-02-01-1400.txt'
-write_file_name = '2022-02-03-1530.txt'
+read_file_name = '2022-03-23-15000.txt'
+write_file_name = '2022-03-28-1400.txt'
 
 def get_aleady_check_list():
     readList = []
@@ -45,17 +45,20 @@ def check_fs(ticker_code):
         if fs.is_continous_rising_quater(1) and fs.is_continous_rising_quater(5) and \
             (current_roe > (pre_roe +1.5)):
             #print('#영업이익 증가, ROE 증가(1.5이상)')
-            count += 2
+            count += 1
 
         #ROE가 3분기 이상 증가
         if fs.is_continous_rising_quater_third(5):
             #print('#ROE가 3분기 이상 증가')
-            count += 4
+            count += 1
 
         #영업이익 3분기 이상 증가
         if fs.is_continous_rising_quater_third(1):
             #print('#영업이익 3분기 이상 증가')
-            count += 8
+            count += 1
+
+        if fs.is_continous_rising_annual(3):
+            count += 10
 
         #todo : PBR이 3분기 이상 낮아짐
         return count
@@ -72,6 +75,10 @@ def main():
     # to_send_mail_list.append('2 : 영업이익 증가, ROE 증가(1.5이상) -> ROE가 얼마나 증가했는지 체크 필요(많이 오를수록 좋다. 3이상)')
     # to_send_mail_list.append('4 : ROE가 3분기 이상 증가 -> ROE가 얼마나 증가했는지 체크 필요(많이오를수록 좋다.)')
     # to_send_mail_list.append('8 : 영업이익 3분기 이상 증가 -> 작년에 비해서 얼마나 증가했는가')
+
+
+    to_send_mail_list.append(' [P1] : 거래량 바닥 확인, 장대 음봉 시 매매 불가 ' )
+    to_send_mail_list.append(' [P2] : 지지선 확인, 강세 다이버전스 확인, 그 외 매매 불가 ' )
     
     try:
         stock_market = StockMarket()
@@ -80,40 +87,48 @@ def main():
 
         for ticker_code in tickers:
             to_mail = str(ticker_code)
+            pattern = 0
             is_buy = False
 
-            result = check_fs(ticker_code)
-            if result == 0:
-                continue
-
-            # it = InvestorTrends(str(ticker_code))
-            # if it.get_cumulative_trading_volume_agency(20) <= 0 and it.get_cumulative_trading_volume_foreigner(10) <= 0:
-            #     continue
-
-            pattern = 0
+            #우선순위1 : 차트 확인
 
             if stock_market.check_advenced(ticker_code) :
                 if stock_market.get_check_point(ticker_code) >= 2 :
-                    to_mail = to_mail
-                    is_buy = True 
                     pattern = 1
-                    print('wow1!!')
-                elif stock_market.get_check_point2(ticker_code) >= 2 :
-                    to_mail = to_mail
-                    is_buy = True 
+                elif stock_market.get_check_point2(ticker_code) >= 1 :
                     pattern = 2
-                    print('wow2!!')
+                else :
+                    continue
 
-            if is_buy:
+            #우선순위2 : 수급확인
+            #외국인이나 기관이 들어온 종목
+
+            it = InvestorTrends(str(ticker_code))
+            is_buy_agency = False
+            is_buy_foreigner = False
+            if it.get_cumulative_trading_volume_agency(20) > 0 : 
+                is_buy_agency = True
+            if it.get_cumulative_trading_volume_foreigner(10) > 0 :
+                is_buy_foreigner = True
+
+            if is_buy_agency == False and is_buy_foreigner  == False:
+                continue
+
+            # 성과. 혹은 실적 점수
+            p_score = check_fs(ticker_code)
+
+            if p_score > 0:
                 to_write_file_list.append(str(ticker_code))
                 if str(ticker_code) in check_list:
                     print('aleady in list')
                     continue
                 else:
                     if pattern == 1 :
-                        to_send_mail_list.append(to_mail + ' - 거래량 바닥 확인, 장대 음봉 시 매매 불가  ')
+                        to_send_mail_list.append(to_mail + '[P1] 성과점수 : ' + str(p_score))
+                        print('code : ' + to_mail + ' [P1] 성과점수 : ' + str(p_score))
                     if pattern == 2 :
-                        to_send_mail_list.append(to_mail + ' - 지지선 확인, 강세 다이버전스 확인, 그 외 매매 불가')
+                        to_send_mail_list.append(to_mail + '[P2] 성과점수 : ' + str(p_score))
+                        print('code : ' + to_mail + ' [P2] 성과점수 : ' + str(p_score))
         print(to_send_mail_list)
         send_mail('\r\n'.join(to_send_mail_list), "check stock result")
         with open(write_file_name, 'wb') as wf:
