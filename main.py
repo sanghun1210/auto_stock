@@ -26,7 +26,6 @@ def check_fs(ticker_code):
         fs = FinacialStat()
         fs.init_fs(ticker_code)
 
-        print('checking... ticker_code: ', ticker_code)
         current_pbr = fs.get_current_pbr()
         if current_pbr == None or math.isnan(float(current_pbr)) == True or current_pbr > 2.5 :
             return False
@@ -82,53 +81,66 @@ def main():
     
     try:
         stock_market = StockMarket()
-        tickers = get_stock_list()
-        check_list = get_aleady_check_list()
+        stock_list_df = get_stock_list()
+        #check_list = get_aleady_check_list()
 
-        for ticker_code in tickers:
-            to_mail = str(ticker_code)
-            pattern = 0
-            is_buy = False
-
-            #우선순위1 : 차트 확인
-
-            if stock_market.check_advenced(ticker_code) :
-                if stock_market.get_check_point(ticker_code) >= 2 :
-                    pattern = 1
-                elif stock_market.get_check_point2(ticker_code) >= 1 :
-                    pattern = 2
-                else :
+        for row in stock_list_df:
+            try:
+                if row['Symbol'].isnumeric():
+                    ticker_code = row['Symbol']
+                else:
                     continue
 
-            #우선순위2 : 수급확인
-            #외국인이나 기관이 들어온 종목
+                market = row['Market']
+                name = row['Name']
+                sector = row['Sector']
 
-            it = InvestorTrends(str(ticker_code))
-            is_buy_agency = False
-            is_buy_foreigner = False
-            if it.get_cumulative_trading_volume_agency(20) > 0 : 
-                is_buy_agency = True
-            if it.get_cumulative_trading_volume_foreigner(10) > 0 :
-                is_buy_foreigner = True
+                to_mail = str(ticker_code)
+                pattern = 0
+                is_buy = False
 
-            if is_buy_agency == False and is_buy_foreigner  == False:
+                print('checking... ticker_code: ', ticker_code)
+
+                #우선순위1 : 차트 확인
+                if stock_market.check_advenced(ticker_code) :
+                    if stock_market.get_check_point(ticker_code) >= 3 :
+                        pattern = 1
+                    elif stock_market.get_check_point2(ticker_code) >= 1 :
+                        pattern = 2
+                    else :
+                        continue
+                else:
+                    continue
+
+                print('step2')
+
+                #우선순위2 : 수급확인
+                #외국인이나 기관이 들어온 종목
+                it = InvestorTrends(str(ticker_code))
+                is_buy_agency = False
+                is_buy_foreigner = False
+                if it.get_cumulative_trading_volume_agency(20) > 0 : 
+                    is_buy_agency = True
+                if it.get_cumulative_trading_volume_foreigner(10) > 0 :
+                    is_buy_foreigner = True
+
+                if is_buy_agency == False and is_buy_foreigner  == False:
+                    continue
+
+                # 성과. 혹은 실적 점수
+                p_score = check_fs(ticker_code)
+                if p_score > 0 and p_score != 10:
+                    to_write_file_list.append(str(ticker_code))
+                    # if str(ticker_code) in check_list:
+                    #     print('aleady in list')
+                    #     continue
+                    # else:
+                    concat_str = to_mail + ' | ' + market + ' | ' + name  + ' | ' + sector + ' | p_score : ' + str(p_score)
+                    to_send_mail_list.append(concat_str)
+                    print(concat_str)
+            except Exception as e:
                 continue
 
-            # 성과. 혹은 실적 점수
-            p_score = check_fs(ticker_code)
-
-            if p_score > 0:
-                to_write_file_list.append(str(ticker_code))
-                if str(ticker_code) in check_list:
-                    print('aleady in list')
-                    continue
-                else:
-                    if pattern == 1 :
-                        to_send_mail_list.append(to_mail + '[P1] 성과점수 : ' + str(p_score))
-                        print('code : ' + to_mail + ' [P1] 성과점수 : ' + str(p_score))
-                    if pattern == 2 :
-                        to_send_mail_list.append(to_mail + '[P2] 성과점수 : ' + str(p_score))
-                        print('code : ' + to_mail + ' [P2] 성과점수 : ' + str(p_score))
         print(to_send_mail_list)
         send_mail('\r\n'.join(to_send_mail_list), "check stock result")
         with open(write_file_name, 'wb') as wf:

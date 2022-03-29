@@ -10,6 +10,7 @@ def get_stock_list():
     #     print("raise error ", e)
     
     code = []
+    return_df = []
     with open('test.csv', mode='r', encoding='cp949') as target_csv:
         df = csv.DictReader(target_csv, delimiter=',')
         for n, row in enumerate(df):
@@ -19,12 +20,10 @@ def get_stock_list():
             if row['Industry'].isspace() or row['Industry'] == '':
                 continue
 
-            try:
-                if row['Symbol'].isnumeric():
-                    code.append(row['Symbol'])
-            except Exception as e:
-                continue
-    return code
+            return_df.append(row)
+
+    if return_df != None:
+        return return_df
 
 if __name__ == "__main__":
     # execute only if run as a script
