@@ -5,7 +5,6 @@ import requests
 
 import os
 import sys
-from . import *
 
 from .candle import *
 from .calcualtor import *
