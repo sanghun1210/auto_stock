@@ -24,21 +24,25 @@ class BaseTrader():
         low_price_list = []
         rsi_list = []
         trade_volume_list = []
+        opening_price_list = []
 
         for candle_unit in self.candles:
             price_list.append(candle_unit.trade_price)
             high_price_list.append(candle_unit.high_price)
             low_price_list.append(candle_unit.low_price)
             trade_volume_list.append(candle_unit.trade_volume)
+            opening_price_list.append(candle_unit.opening_price)
 
         price_list.reverse()
         high_price_list.reverse()
         low_price_list.reverse()
         trade_volume_list.reverse()
+        opening_price_list.reverse()
         df = pd.DataFrame(price_list, columns=['trade_price'])
         df.insert(1, 'high_price', high_price_list, True)
         df.insert(2, 'low_price', low_price_list, True)
         df.insert(3, 'trade_volume', trade_volume_list, True)
+        df.insert(4, 'opening_price', opening_price_list, True)
         return df
 
     def ma(self, index):

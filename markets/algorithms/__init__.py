@@ -15,3 +15,4 @@ from .volatility_trend_following import *
 from .super_trend import *
 from .force_index import *
 from .adx import *
+from .disparity import *

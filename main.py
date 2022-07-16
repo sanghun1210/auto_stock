@@ -29,49 +29,62 @@ def check_fs(ticker_code):
         fs = FinacialStat()
         fs.init_fs(ticker_code)
 
+        point = 0
+
         current_pbr = fs.get_current_pbr()
-        if current_pbr == None or math.isnan(float(current_pbr)) == True or current_pbr > 2.5 :
+        if current_pbr == None or math.isnan(float(current_pbr)) == True or current_pbr > 2.7 :
             return False
 
         current_roe = fs.get_current_roe()
         pre_roe = fs.get_pre_roe()
+        current_operating_income = fs.get_current_operating_incom(1)
+        # current_annual_eps = fs.get_current_annual_data(9)
+        # current_quater_eps = fs.get_current_quater_data(9)
+        # current_annual_roe = fs.get_current_annual_data(5)
 
         #print('current_pbr, current_roe, pre_roe :' + str(current_pbr) + ' ' + str(current_roe) + ' ' + str(pre_roe) )
         #ROE 7이상 PBR 0.5 미만
-        count = 0
-        if current_roe > 7 and current_pbr < 0.5:
-            #print('#ROE 7이상 PBR 0.5 미만')
-            logger.info('#ROE 7이상 PBR 0.5 미만')
-            count += 1
+        logger.info(' current_roe : ' + str(current_roe) )
+        logger.info(' current_pbr : ' + str(current_pbr) )
+        logger.info(' fs.is_continous_rising_quater(1) : ' + str(fs.is_continous_rising_quater(1)) )
+        logger.info(' fs.is_continous_rising_quater(5): ' + str(fs.is_continous_rising_quater(5)) )
+        logger.info(' fs.is_continous_rising_quater_third(5): ' + str(fs.is_continous_rising_quater_third(5)) )
+        
+        # 기업이 성장했는가?
+        # 매출액 성장 #EPS 성장
+        if  fs.is_continous_rising_annual(0) and fs.is_continous_rising_annual(9) and current_operating_income > 0:
+            # if (current_roe >= 5 and current_pbr < 1 and current_pbr >= 0) or \
+            #     (current_roe >= 5 and current_operating_income > 0 and current_pbr < -1) :
+            #     point += 1
 
-        #영업이익 증가, ROE 증가(1.5이상)
-        if fs.is_continous_rising_quater(1) and fs.is_continous_rising_quater(5) and \
-            (current_roe > (pre_roe +1.5)):
-            #print('#영업이익 증가, ROE 증가(1.5이상)')
-            logger.info('#영업이익 증가, ROE 증가(1.5이상)')
-            count += 1
+            #영업이익 3분기 연속 증가
+            if fs.is_continous_rising_quater_third(1):
+                #print('#영업이익 3분기 이상 증가')
+                logger.info('#영업이익 3분기 이상 증가')
+                point += 1
 
-        #ROE가 3분기 이상 증가
-        if fs.is_continous_rising_quater_third(5):
-            #print('#ROE가 3분기 이상 증가')
-            logger.info('#ROE가 3분기 이상 증가')
-            count += 1
+            #영업이익 증가, ROE 증가(1.5이상)
+            if fs.is_continous_rising_quater(5) and \
+                (current_roe > (pre_roe + 1.5)):
+                #print('#영업이익 증가, ROE 증가(1.5이상)')
+                logger.info('#영업이익 증가, ROE 증가(1.5이상)')
+                point += 1
 
-        #영업이익 3분기 이상 증가
-        if fs.is_continous_rising_quater_third(1):
-            #print('#영업이익 3분기 이상 증가')
-            logger.info('#영업이익 3분기 이상 증가')
-            count += 1
+            #ROE가 3분기 연속 증가
+            if fs.is_continous_rising_quater_third(5):
+                #print('#ROE가 3분기 이상 증가')
+                logger.info('#ROE가 3분기 이상 증가')
+                point += 1
 
-        if fs.is_continous_rising_annual(3):
-            logger.info('#영업이익 3년 이상 증가')
-            count += 10
+            #평균 EPS가 3분기 높다.
+            if fs.is_continous_rising_quater_advenced(9):
+                #print('#EPS가 3분기 이상 증가')
+                logger.info('#ROE가 3분기 이상 증가')
+                point += 1
 
-        #todo : PBR이 3분기 이상 낮아짐
-        logger.info('재무분석결과 : ' + str(count) )
-        return count
+        return point
     except Exception as e:    
-        print("raise error ", e)
+        # print("raise error ", e)
         return 0
     
 def main():
@@ -90,8 +103,9 @@ def main():
     to_send_mail_list = []
     to_write_file_list = []
 
-    to_send_mail_list.append(' [T1] : 거래량 바닥 확인, 장대 음봉 확인 시 매매 불가 , 가능한 60분봉에서 stc 가 30미만인것으로 매매' )
-    to_send_mail_list.append(' [T2] : 지지선 확인, 강세 다이버전스 확인, 그 외 매매 불가, 가능한 60분봉의 macd가 상승추세인것을 확인 ' )
+    to_send_mail_list.append('주도주체가 파는데 오르는 종목' )
+    to_send_mail_list.append('주도주체가 더이상 팔게 없는 종목' )
+    to_send_mail_list.append('주도주체가 다시 사고 있는 종목' )
     
     try:
         stock_market = StockMarket(logger)
@@ -104,6 +118,7 @@ def main():
                 logger.info('----------------------------------------------------------------')
                 if row['Symbol'].isnumeric():
                     ticker_code = row['Symbol']
+                    #ticker_code = '005090'
                 else:
                     continue
 
@@ -111,29 +126,49 @@ def main():
                 name = row['Name']
                 sector = row['Sector']
 
+                if market != 'KOSDAQ' and market != 'KOSPI':
+                    continue
+
+                if sector == '':
+                    continue
+
                 log_concat_str =  str(ticker_code) + ' | ' + market + ' | ' + name
                 logger.info(log_concat_str)
 
                 to_mail = str(ticker_code)
-                pattern = 0
                 is_buy = False
 
                 print('checking... ticker_code: ', ticker_code)
 
                 #우선순위1 : 차트 확인
-                if stock_market.check_advenced(ticker_code) :
-                    logger.info('check_advenced 통과')
-                    if stock_market.get_check_point(ticker_code) >= 3 :
-                        logger.info('pattern1 통과')
-                        pattern = 1
-                    elif stock_market.get_check_point2(ticker_code) >= 2 :
-                        logger.info('pattern2 통과')
-                        pattern = 2
-                    else :
-                        logger.info('일간 차트 통과 실패')
-                        continue
-                else:
-                    logger.info('check_advenced 차트 통과 실패')
+                pattern = 0
+                # if stock_market.check_month_base(ticker_code) and stock_market.check_week_base(ticker_code) and stock_market.check_day1(ticker_code):
+                #     logger.info('check_month_base 통과')
+                #     pattern += 1
+
+                # if stock_market.check_month_base2(ticker_code) and stock_market.check_week_base2(ticker_code) and stock_market.check_day2(ticker_code):
+                #     logger.info('check_month_base2 통과')
+                #     pattern += 2
+
+                # if stock_market.check_week_base(ticker_code) and stock_market.check_month_base_day2(ticker_code):
+                #     logger.info('check_month_base 통과')
+                #     pattern += 2
+
+                # result = stock_market.check_week_by_rsi(ticker_code) or stock_market.check_day_by_rsi(ticker_code)
+                #trade_price = stock_market.get_week_trade_price(ticker_code)
+
+                # if result == False:
+                #     continue
+
+                if stock_market.check_pattern1(ticker_code) :
+                    pattern += 1
+
+                # if stock_market.check_day_by_rsi(ticker_code) :
+                #     pattern += 2
+
+                    
+                if pattern <= 0:
+                    logger.info('차트 통과 실패')
                     continue
 
                 #우선순위2 : 수급확인
@@ -141,37 +176,35 @@ def main():
                 it = InvestorTrends(str(ticker_code))
                 is_buy_agency = False
                 is_buy_foreigner = False
-                if it.get_cumulative_trading_volume_agency(20) > 0 : 
-                    logger.info('기관매수')
-                    is_buy_agency = True
-                if it.get_cumulative_trading_volume_foreigner(10) > 0 :
-                    logger.info('외국인매수')
-                    is_buy_foreigner = True
 
-                # if is_buy_agency == False and is_buy_foreigner  == False:
-                #     continue
+                agency1 = it.get_cumulative_trading_volume_agency(1)
+                foreigner1 = it.get_cumulative_trading_volume_foreigner(1)
+
+                sum = 0
+                if agency1 > foreigner1:
+                    if foreigner1 > 0:
+                        sum = agency1 - foreigner1
+                    else:
+                        sum = agency1 + foreigner1
+                else : 
+                    if agency1 > 0:
+                        sum = foreigner1 - agency1 
+                    else:
+                        sum = agency1 + agency1 
+
+                print(agency1, foreigner1)
+                print(sum)
 
                 # 성과. 혹은 실적 점수
-                p_score = check_fs(ticker_code)
-                if p_score > 0 and p_score != 10:
+                point = check_fs(ticker_code)
+                if point >= 2 :
                     to_write_file_list.append(str(ticker_code))
-                    # if str(ticker_code) in check_list:
-                    #     print('aleady in list')
-                    #     continue
-                    # else:
 
-                    if pattern == 1 :
-                        to_mail ='[T1] ' + to_mail 
-                    else :
-                        to_mail ='[T2] ' + to_mail 
+                    if pattern == 1 : to_mail ='[P1] ' + to_mail
+                    if pattern == 2 : to_mail ='[P2] ' + to_mail
+                    if pattern == 3 : to_mail ='[P3] ' + to_mail
 
-                    concat_str = to_mail + ' | ' + market + ' | ' + name  + ' | ' + sector + ' | ' + str(p_score)
-                    if is_buy_agency :
-                        concat_str = concat_str + ' | 기관매수'
-                    if is_buy_foreigner :
-                        concat_str = concat_str + ' | 외국인매수'
-
-                    ticker_dict[concat_str] = p_score
+                    concat_str = to_mail + ' | ' + market + ' | ' + name  + ' | ' + sector  
 
                     logger.info('매수 목록에 추가')
                     to_send_mail_list.append(concat_str)
@@ -191,12 +224,6 @@ def main():
 
         print(to_send_mail_list)
 
-        # sorted_ticker_dict = sorted(sector_dict.items(), key = lambda item: item[1], reverse = True)
-
-        # msg = ''
-
-        # for item in sorted_ticker_dict:
-        #     msg = msg + '\r\n' + str(item)
         msg = '\r\n'.join(to_send_mail_list)
         sorted_dict = sorted(sector_dict.items(), key = lambda item: item[1], reverse = True)
         msg = msg + '\r\n\r\n'

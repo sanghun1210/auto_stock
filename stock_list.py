@@ -3,11 +3,11 @@ import pandas as pd
 import csv
 
 def get_stock_list():
-    # try:
-    #     krx_list = fdr.StockListing("KRX")
-    #     krx_list.to_csv('test.csv', encoding="cp949")
-    # except Exception as e:    
-    #     print("raise error ", e)
+    try:
+        krx_list = fdr.StockListing("KRX")
+        krx_list.to_csv('test.csv', encoding="cp949")
+    except Exception as e:    
+        print("raise error ", e)
     
     code = []
     return_df = []
@@ -17,8 +17,8 @@ def get_stock_list():
             if not n:#skip header
                 continue
 
-            if row['Industry'].isspace() or row['Industry'] == '':
-                continue
+            # if row['Industry'].isspace() or row['Industry'] == '':
+            #     continue
 
             return_df.append(row)
 

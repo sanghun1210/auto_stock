@@ -12,3 +12,4 @@ def send_mail(msg, subject):
     msg['Subject'] = subject
     smtp.sendmail(me, me, msg.as_string())
     smtp.quit()
+

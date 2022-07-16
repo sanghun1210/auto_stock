@@ -25,4 +25,4 @@ def sma(pd_dataframe, time_period):
 
 def get_current_sma(pd_dataframe, time_period):
     goog_data = sma(pd_dataframe, time_period)
-    return goog_data['Simple20DayMovingAverage'].iloc[-1]
+    return goog_data.iloc[-1]

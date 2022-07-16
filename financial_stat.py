@@ -153,6 +153,74 @@ class FinacialStat():
             print("raise error ", e)
             return False
 
+
+
+    def get_current_operating_incom(self, result_type):
+        try:
+            column_count = len(self.quater_date.columns)
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.quater_date.columns[i]
+                pre_idx = self.quater_date.columns[i-1]
+                third_idx = self.quater_date.columns[i-2]
+
+                current_fs = self.quater_date[current_idx].iloc[result_type]
+                pre_fs = self.quater_date[pre_idx].iloc[result_type]
+                third_fs = self.quater_date[third_idx].iloc[result_type]
+
+                if current_fs == '-' or math.isnan(float(current_fs)):
+                    continue
+
+                if pre_fs == '-' or math.isnan(float(pre_fs)) :
+                    return False
+
+                return float(current_fs) 
+        except Exception as e:
+            print("raise error ", e)
+            return -1
+
+    def get_current_annual_data(self, result_type):
+        try:
+            column_count = len(self.annual_date.columns)
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.annual_date.columns[i]
+
+                #print(self.annual_date.columns)
+
+                current_fs = self.annual_date[current_idx].iloc[result_type]
+                if current_fs == '-' or math.isnan(float(current_fs)):
+                    continue
+
+                return float(current_fs)
+
+            return 0
+
+        except Exception as e:
+            print("raise error ", e)
+            return 0
+
+    def get_current_quater_data(self, result_type):
+        try:
+            column_count = len(self.quater_date.columns)
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.quater_date.columns[i]
+
+                #print(self.annual_date.columns)
+
+                current_fs = self.quater_date[current_idx].iloc[result_type]
+                if current_fs == '-' or math.isnan(float(current_fs)):
+                    continue
+
+                return float(current_fs)
+
+            return 0
+
+        except Exception as e:
+            print("raise error ", e)
+            return 0
+
     def is_continous_rising_quater_third(self, result_type):
         try:
             column_count = len(self.quater_date.columns)
@@ -209,6 +277,41 @@ class FinacialStat():
 
                 return False
             return False
+
+        except Exception as e:
+            print("raise error ", e)
+            return False  
+
+
+    def is_continous_rising_quater_advenced(self, result_type):
+        try:
+            column_count = len(self.quater_date.columns)
+
+            total_fs = 0
+            this_fs = 0
+            count = 0 
+
+            for i in reversed(range(column_count)) :
+                current_idx = self.quater_date.columns[i]
+                current_fs = self.quater_date[current_idx].iloc[result_type]
+
+                if current_fs == '-' or math.isnan(float(current_fs)):
+                    continue
+
+                if count == 0:
+                    this_fs = float(current_fs) 
+
+                total_fs += float(current_fs) 
+                count += 1
+
+                if count >= 3 :
+                    break
+
+            bal = total_fs / count
+            print(bal)
+            print(this_fs)
+            if bal < this_fs:
+                return True
 
         except Exception as e:
             print("raise error ", e)

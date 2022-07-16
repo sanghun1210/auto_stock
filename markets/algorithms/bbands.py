@@ -90,7 +90,7 @@ def bbands_width(pd_dataframe, time_period):
     # print(uband.iloc[-1])
     # print(mband.iloc[-1])
     # print(lband.iloc[-1])
-    return get_margin(uband.iloc[-1], lband.iloc[-1])
+    return ((uband.iloc[-1] - lband.iloc[-1]) / mband.iloc[-1]) * 100
 
 
 def bbands_is_low_touch(pd_dataframe, time_period):
