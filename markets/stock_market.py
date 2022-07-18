@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 import requests
 
 from .base_market import *
+from .base_trader import *
 from .week_trader import *
 from .day_trader import *
 from .month_trader import *
@@ -416,9 +417,33 @@ class StockMarket(BaseMarket):
                 day_trader = DayTrader(ticker_code, 150)
                 day_pdf = day_trader.get_dataframe()
                 rsi = algorithms.get_current_rsi(day_pdf, 13)
-                fi7 = algorithms.force_index(day_pdf, 7)
                 ema13 = algorithms.ema(day_pdf, 13)
                 if ema13.iloc[-1] <= day_pdf['trade_price'].iloc[-1] :
+                    return True
+            return False
+        except Exception as e:
+            print("raise error ", e)
+            return False
+
+    def check_pattern2(self, ticker_code):
+        try:
+            point = 0
+            self.week_trader = WeekTrader(ticker_code, 45)
+            if self.week_trader.candles[1].trade_volume == 0:
+                return False
+
+            week_pdf = self.week_trader.get_dataframe()
+            rsi = algorithms.get_current_rsi(week_pdf, 13)
+            slow_k, slow_d = algorithms.stc_slow(week_pdf, 7, 3, 3)
+
+            if rsi <= 40 and slow_d.iloc[-1] <= 35:
+                day_trader = DayTrader(ticker_code, 150)
+                day_pdf = day_trader.get_dataframe()
+                rsi = algorithms.get_current_rsi(day_pdf, 13)
+                fi13 = algorithms.force_index(day_pdf, 13)
+                fi2 = algorithms.force_index(day_pdf, 2)
+                ema13 = algorithms.ema(day_pdf, 13)
+                if fi13['ForceIndex'].iloc[-1] > 0 and fi2['ForceIndex'].iloc[-1] < 0:
                     return True
             return False
         except Exception as e:

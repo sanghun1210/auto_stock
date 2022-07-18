@@ -5,7 +5,7 @@ from mail import *
 from markets.stock_market import *
 from financial_stat import *
 from stock_list import *
-from investor_trends import *
+#from investor_trends import *
 import pickle
 import json
 from datetime import datetime
@@ -163,6 +163,9 @@ def main():
                 if stock_market.check_pattern1(ticker_code) :
                     pattern += 1
 
+                if stock_market.check_pattern2(ticker_code) :
+                    pattern += 2
+
                 # if stock_market.check_day_by_rsi(ticker_code) :
                 #     pattern += 2
 
@@ -173,27 +176,27 @@ def main():
 
                 #우선순위2 : 수급확인
                 #외국인이나 기관이 들어온 종목
-                it = InvestorTrends(str(ticker_code))
-                is_buy_agency = False
-                is_buy_foreigner = False
+                # it = InvestorTrends(str(ticker_code))
+                # is_buy_agency = False
+                # is_buy_foreigner = False
 
-                agency1 = it.get_cumulative_trading_volume_agency(1)
-                foreigner1 = it.get_cumulative_trading_volume_foreigner(1)
+                # agency1 = it.get_cumulative_trading_volume_agency(1)
+                # foreigner1 = it.get_cumulative_trading_volume_foreigner(1)
 
-                sum = 0
-                if agency1 > foreigner1:
-                    if foreigner1 > 0:
-                        sum = agency1 - foreigner1
-                    else:
-                        sum = agency1 + foreigner1
-                else : 
-                    if agency1 > 0:
-                        sum = foreigner1 - agency1 
-                    else:
-                        sum = agency1 + agency1 
+                # sum = 0
+                # if agency1 > foreigner1:
+                #     if foreigner1 > 0:
+                #         sum = agency1 - foreigner1
+                #     else:
+                #         sum = agency1 + foreigner1
+                # else : 
+                #     if agency1 > 0:
+                #         sum = foreigner1 - agency1 
+                #     else:
+                #         sum = agency1 + agency1 
 
-                print(agency1, foreigner1)
-                print(sum)
+                # print(agency1, foreigner1)
+                # print(sum)
 
                 # 성과. 혹은 실적 점수
                 point = check_fs(ticker_code)
