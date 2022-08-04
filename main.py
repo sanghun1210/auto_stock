@@ -53,34 +53,35 @@ def check_fs(ticker_code):
         # 기업이 성장했는가?
         # 매출액 성장 #EPS 성장
         if  fs.is_continous_rising_annual(0) and fs.is_continous_rising_annual(9) and current_operating_income > 0:
+            point += 2
             # if (current_roe >= 5 and current_pbr < 1 and current_pbr >= 0) or \
             #     (current_roe >= 5 and current_operating_income > 0 and current_pbr < -1) :
             #     point += 1
 
-            #영업이익 3분기 연속 증가
-            if fs.is_continous_rising_quater_third(1):
-                #print('#영업이익 3분기 이상 증가')
-                logger.info('#영업이익 3분기 이상 증가')
-                point += 1
+        #영업이익 3분기 연속 증가
+        if fs.is_continous_rising_quater_third(1):
+            #print('#영업이익 3분기 이상 증가')
+            logger.info('#영업이익 3분기 이상 증가')
+            point += 1
 
-            #영업이익 증가, ROE 증가(1.5이상)
-            if fs.is_continous_rising_quater(5) and \
-                (current_roe > (pre_roe + 1.5)):
-                #print('#영업이익 증가, ROE 증가(1.5이상)')
-                logger.info('#영업이익 증가, ROE 증가(1.5이상)')
-                point += 1
+        #영업이익 증가, ROE 증가(1.5이상)
+        if fs.is_continous_rising_quater(5) and \
+            (current_roe > (pre_roe + 1.5)):
+            #print('#영업이익 증가, ROE 증가(1.5이상)')
+            logger.info('#영업이익 증가, ROE 증가(1.5이상)')
+            point += 1
 
-            #ROE가 3분기 연속 증가
-            if fs.is_continous_rising_quater_third(5):
-                #print('#ROE가 3분기 이상 증가')
-                logger.info('#ROE가 3분기 이상 증가')
-                point += 1
+        #ROE가 3분기 연속 증가
+        if fs.is_continous_rising_quater_third(5):
+            #print('#ROE가 3분기 이상 증가')
+            logger.info('#ROE가 3분기 이상 증가')
+            point += 1
 
-            #평균 EPS가 3분기 높다.
-            if fs.is_continous_rising_quater_advenced(9):
-                #print('#EPS가 3분기 이상 증가')
-                logger.info('#ROE가 3분기 이상 증가')
-                point += 1
+        #평균 EPS가 3분기 높다.
+        if fs.is_continous_rising_quater_advenced(9):
+            #print('#EPS가 3분기 이상 증가')
+            logger.info('#ROE가 3분기 이상 증가')
+            point += 1
 
         return point
     except Exception as e:    
@@ -163,8 +164,8 @@ def main():
                 if stock_market.check_pattern1(ticker_code) :
                     pattern += 1
 
-                if stock_market.check_pattern2(ticker_code) :
-                    pattern += 2
+                # if stock_market.check_pattern2(ticker_code) :
+                #     pattern += 2
 
                 # if stock_market.check_day_by_rsi(ticker_code) :
                 #     pattern += 2

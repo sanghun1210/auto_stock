@@ -412,13 +412,21 @@ class StockMarket(BaseMarket):
             week_pdf = self.week_trader.get_dataframe()
             rsi = algorithms.get_current_rsi(week_pdf, 13)
             slow_k, slow_d = algorithms.stc_slow(week_pdf, 7, 3, 3)
+            cci20 = algorithms.get_current_cci(week_pdf, 20)
 
-            if rsi <= 38 and slow_d.iloc[-1] <= 35:
+            if algorithms.macd_line_over_than_signal2(week_pdf, 12, 26, 9) and cci20 >= 0 and slow_k.iloc[-1] < 65:
+                print('주봉 통과')
                 day_trader = DayTrader(ticker_code, 150)
                 day_pdf = day_trader.get_dataframe()
-                rsi = algorithms.get_current_rsi(day_pdf, 13)
-                ema13 = algorithms.ema(day_pdf, 13)
-                if ema13.iloc[-1] <= day_pdf['trade_price'].iloc[-1] :
+                cci20d = algorithms.get_current_cci(day_pdf, 20)
+                    
+                slow_k, slow_d = algorithms.stc_slow(day_pdf, 7, 3, 3)
+                if slow_d.iloc[-1] < 40:
+                    print('type1')
+                    return True
+
+                if cci20d < 30 :
+                    print('type2') 
                     return True
             return False
         except Exception as e:
