@@ -161,7 +161,7 @@ def main():
                 # if result == False:
                 #     continue
 
-                if stock_market.check_pattern1(ticker_code) :
+                if stock_market.check_pattern_dmi_adx4(ticker_code) :
                     pattern += 1
 
                 # if stock_market.check_pattern2(ticker_code) :
@@ -200,8 +200,8 @@ def main():
                 # print(sum)
 
                 # 성과. 혹은 실적 점수
-                point = check_fs(ticker_code)
-                if point >= 2 :
+                #point = check_fs(ticker_code)
+                if True :
                     to_write_file_list.append(str(ticker_code))
 
                     if pattern == 1 : to_mail ='[P1] ' + to_mail
