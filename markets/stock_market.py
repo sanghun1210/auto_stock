@@ -412,21 +412,17 @@ class StockMarket(BaseMarket):
             week_pdf = self.week_trader.get_dataframe()
             rsi = algorithms.get_current_rsi(week_pdf, 13)
             slow_k, slow_d = algorithms.stc_slow(week_pdf, 7, 3, 3)
-            cci20 = algorithms.get_current_cci(week_pdf, 20)
+            cci13 = algorithms.get_current_cci(week_pdf, 13)
 
-            if algorithms.macd_line_over_than_signal2(week_pdf, 12, 26, 9) and cci20 >= 0 and slow_k.iloc[-1] < 65:
-                print('주봉 통과')
+            res = algorithms.adx(week_pdf['high_price'], week_pdf['low_price'], week_pdf['trade_price'], 14)      
+            if slow_k.iloc[-1] <= slow_d.iloc[-1] and res['DMP_14'].iloc[-1] > res['DMN_14'].iloc[-1] and \
+                res['ADX_14'].iloc[-1] < res['DMP_14'].iloc[-1] and res['ADX_14'].iloc[-1] >= res['DMN_14'].iloc[-1]: 
                 day_trader = DayTrader(ticker_code, 150)
                 day_pdf = day_trader.get_dataframe()
-                cci20d = algorithms.get_current_cci(day_pdf, 20)
-                    
-                slow_k, slow_d = algorithms.stc_slow(day_pdf, 7, 3, 3)
+               
+                slow_k, slow_d = algorithms.stc_slow(day_pdf, 9, 3, 3)
                 if slow_d.iloc[-1] < 40:
                     print('type1')
-                    return True
-
-                if cci20d < 30 :
-                    print('type2') 
                     return True
             return False
         except Exception as e:
@@ -499,3 +495,130 @@ class StockMarket(BaseMarket):
         except Exception as e:
             print("raise error ", e)
             return 0
+
+    def check_pattern_dmi_adx(self, ticker_code):
+        try:
+            point = 0
+            self.week_trader = WeekTrader(ticker_code, 45)
+            if self.week_trader.candles[1].trade_volume == 0:
+                return False
+
+            week_pdf = self.week_trader.get_dataframe()
+            rsi = algorithms.get_current_rsi(week_pdf, 13)
+            slow_k, slow_d = algorithms.stc_slow(week_pdf, 7, 3, 3)
+            cci13 = algorithms.get_current_cci(week_pdf, 13)
+
+            sma13 = algorithms.get_current_sma(week_pdf, 13)
+            week_psar = algorithms.parabolic_sar(week_pdf)
+            if week_pdf['trade_price'].iloc[-1] > sma13 and math.isnan(float(week_psar['PSARl_0.02_0.2'].iloc[-1])) == False :
+                day_trader = DayTrader(ticker_code, 150)
+                day_pdf = day_trader.get_dataframe()
+
+                res = algorithms.adx(day_pdf['high_price'], day_pdf['low_price'], day_pdf['trade_price'], 14)    
+                if res['DMP_14'].iloc[-1] > res['DMN_14'].iloc[-1] and res['ADX_14'].iloc[-1] > res['ADX_14'].iloc[-2]:
+                    print('111')
+                    psar = algorithms.parabolic_sar(day_pdf)
+                    if math.isnan(float(psar['PSARl_0.02_0.2'].iloc[-1])) == False and psar['PSARl_0.02_0.2'].iloc[-1] < day_pdf['trade_price'].iloc[-1] and res['ADX_14'].iloc[-1] < res['DMP_14'].iloc[-1]:
+                        return True
+
+
+
+            # res = algorithms.adx(week_pdf['high_price'], week_pdf['low_price'], week_pdf['trade_price'], 14)      
+            # if slow_k.iloc[-1] <= slow_d.iloc[-1] and res['DMP_14'].iloc[-1] > res['DMN_14'].iloc[-1] and \
+            #     res['ADX_14'].iloc[-1] < res['DMP_14'].iloc[-1] and res['ADX_14'].iloc[-1] >= res['DMN_14'].iloc[-1]: 
+            #     day_trader = DayTrader(ticker_code, 150)
+            #     day_pdf = day_trader.get_dataframe()
+               
+            #     slow_k, slow_d = algorithms.stc_slow(day_pdf, 9, 3, 3)
+            #     if slow_d.iloc[-1] < 40:
+            #         print('type1')
+            #         return True
+            return False
+        except Exception as e:
+            print("raise error ", e)
+            return False
+
+    def check_pattern_dmi_adx2(self, ticker_code):
+        try:
+            point = 0
+            self.week_trader = WeekTrader(ticker_code, 35)
+            if self.week_trader.candles[1].trade_volume == 0:
+                return False
+
+            week_pdf = self.week_trader.get_dataframe()
+            rsi = algorithms.get_current_rsi(week_pdf, 13)
+            slow_k, slow_d = algorithms.stc_slow(week_pdf, 7, 3, 3)
+            cci13 = algorithms.get_current_cci(week_pdf, 13)
+
+            sma13 = algorithms.get_current_sma(week_pdf, 13)
+            week_psar = algorithms.parabolic_sar(week_pdf)
+            res = algorithms.adx(week_pdf['high_price'], week_pdf['low_price'], week_pdf['trade_price'], 14) 
+            if res['DMP_14'].iloc[-1] > res['DMN_14'].iloc[-1] and res['ADX_14'].iloc[-1] > res['ADX_14'].iloc[-2] and \
+                math.isnan(float(week_psar['PSARl_0.02_0.2'].iloc[-1])) == False :
+                day_trader = DayTrader(ticker_code, 120)
+                day_pdf = day_trader.get_dataframe()
+                res = algorithms.adx(day_pdf['high_price'], day_pdf['low_price'], day_pdf['trade_price'], 14)    
+                sma20 = algorithms.get_current_sma(day_pdf, 20)
+                slow_k, slow_d = algorithms.stc_slow(day_pdf, 7, 3, 3)
+                if slow_d.iloc[-1] <= 37 :
+                    return True
+            return False
+        except Exception as e:
+            print("raise error ", e)
+            return False
+
+    def check_pattern_dmi_adx3(self, ticker_code):
+        try:
+            point = 0
+            self.week_trader = WeekTrader(ticker_code, 35)
+            if self.week_trader.candles[1].trade_volume == 0:
+                return False
+
+            week_pdf = self.week_trader.get_dataframe()
+            rsi = algorithms.get_current_rsi(week_pdf, 13)
+            slow_k, slow_d = algorithms.stc_slow(week_pdf, 7, 3, 3)
+            cci13 = algorithms.get_current_cci(week_pdf, 13)
+
+            if slow_d.iloc[-1] <= 34 :
+                day_trader = DayTrader(ticker_code, 120)
+                day_pdf = day_trader.get_dataframe()
+                slow_k, slow_d = algorithms.stc_slow(day_pdf, 7, 3, 3)
+                ema13 = algorithms.ema(day_pdf, 13)
+                if ema13.iloc[-1] <= day_pdf['trade_price'].iloc[-1] and slow_d.iloc[-1] < 40:
+                    res = algorithms.adx(day_pdf['high_price'], day_pdf['low_price'], day_pdf['trade_price'], 14) 
+                    if res['DMP_14'].iloc[-1] > res['DMN_14'].iloc[-1] and res['ADX_14'].iloc[-1] > res['ADX_14'].iloc[-2]:
+                        return True
+            return False
+        except Exception as e:
+            print("raise error ", e)
+            return False
+
+    def check_pattern_dmi_adx4(self, ticker_code):
+        try:
+            point = 0
+            self.week_trader = WeekTrader(ticker_code, 35)
+            if self.week_trader.candles[1].trade_volume == 0:
+                return False
+
+            week_pdf = self.week_trader.get_dataframe()
+            rsi = algorithms.get_current_rsi(week_pdf, 13)
+            slow_k, slow_d = algorithms.stc_slow(week_pdf, 7, 3, 3)
+            cci13 = algorithms.get_current_cci(week_pdf, 13)
+
+            ema13 = algorithms.ema(week_pdf, 13)
+
+            res = algorithms.adx(week_pdf['high_price'], week_pdf['low_price'], week_pdf['trade_price'], 14) 
+            if ema13.iloc[-1] <= week_pdf['trade_price'].iloc[-1] and \
+                res['DMP_14'].iloc[-1] > res['DMN_14'].iloc[-1] and res['ADX_14'].iloc[-1] < res['DMP_14'].iloc[-1] :
+                if res['DMP_14'].iloc[-1] > res['DMP_14'].iloc[-2] or res['DMN_14'].iloc[-1] < res['DMN_14'].iloc[-2]:
+                    day_trader = DayTrader(ticker_code, 120)
+                    day_pdf = day_trader.get_dataframe()
+                    cci20 = algorithms.get_current_cci(day_pdf, 20)
+                    if cci20 < 25 :
+                        res = algorithms.adx(day_pdf['high_price'], day_pdf['low_price'], day_pdf['trade_price'], 14) 
+                        if res['DMP_14'].iloc[-1] > res['DMN_14'].iloc[-1]:
+                            return True
+            return False
+        except Exception as e:
+            print("raise error ", e)
+            return False
